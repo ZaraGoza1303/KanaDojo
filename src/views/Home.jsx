@@ -6,8 +6,9 @@ import { EXTENDED_KANA, LOANWORDS } from '../data/extended.js'
 
 const MODES = [
   { id: 'translate', title: 'Mode Translate', desc: 'Baca teks panjang, tulis romaji-nya. Akurasi, waktu & highlight kesalahan.', tags: ['Cerita & Dialog', `${TEXTS.length} teks`, 'Endless'] },
-  { id: 'quiz', title: 'Tes Huruf', desc: 'Kuis cepat 1 huruf: hiragana, katakana, atau campur. Streak & combo.', tags: ['20–30 soal', 'Filter kana', 'Endless & Challenge'] },
+  { id: 'quiz', title: 'Tes Huruf', desc: 'Kuis cepat 1 huruf: hiragana, katakana, atau campur. Streak & combo.', tags: ['20-30 soal', 'Filter kana', 'Endless & Challenge'] },
   { id: 'combo', title: 'Kombinasi & Extended', desc: `${EXTENDED_KANA.length} kombinasi sulit plus mode Kata Serapan.`, tags: [`${LOANWORDS.length} kata serapan`, 'Yoon', 'Challenge'] },
+  { id: 'lobby', title: 'Multiplayer Online', desc: 'Tanding realtime 1v1 semua mode via room code', tags: ['Realtime', 'Room Code', 'Semua Mode'] },
 ]
 
 export default function Home({ progress, onNavigate }) {
@@ -24,7 +25,7 @@ export default function Home({ progress, onNavigate }) {
         </p>
       </section>
 
-      <section className="grid gap-4 sm:grid-cols-3">
+      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {MODES.map((m, i) => (
           <button key={m.id} onClick={() => onNavigate(m.id)} style={{ animationDelay: `${i * 70}ms` }} className="animate-rise rounded-2xl border border-slate-200 bg-white p-5 text-left shadow-sm transition hover:border-slate-300 hover:shadow-md dark:border-zinc-700 dark:bg-zinc-800 dark:hover:border-zinc-600">
             <h2 className="font-semibold text-slate-900 dark:text-white">{m.title}</h2>

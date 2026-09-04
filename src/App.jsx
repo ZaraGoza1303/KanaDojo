@@ -1,15 +1,32 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useProgress } from './lib/progress.js'
 import { ProgressBar, Toggle } from './components/ui.jsx'
 import Home from './views/Home.jsx'
 import TranslateMode from './views/TranslateMode.jsx'
 import QuizMode from './views/QuizMode.jsx'
 import ComboMode from './views/ComboMode.jsx'
+import Lobby from './views/Lobby.jsx'
 
 export default function App() {
   const [view, setView] = useState('home')
+  const [multiplayerConfig, setMultiplayerConfig] = useState(null)
+  const [initialRoomCode, setInitialRoomCode] = useState(null)
   const progress = useProgress()
   const goHome = () => setView('home')
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const room = params.get('room')
+    if (room) {
+      setInitialRoomCode(room.toUpperCase())
+      setView('lobby')
+    }
+  }, [])
+
+  const handleStartGame = (config) => {
+    setMultiplayerConfig(config)
+    setView('multiplayer')
+  }
 
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-4xl flex-col px-4 pb-10 sm:px-6">
@@ -42,6 +59,13 @@ export default function App() {
         {view === 'translate' && <TranslateMode progress={progress} onExit={goHome} />}
         {view === 'quiz' && <QuizMode progress={progress} onExit={goHome} />}
         {view === 'combo' && <ComboMode progress={progress} onExit={goHome} />}
+        {view === 'lobby' && <Lobby onStartGame={handleStartGame} onBack={goHome} initialRoomCode={initialRoomCode} />}
+        {view === 'multiplayer' && (
+          <div className="mx-auto max-w-xl space-y-4 text-center">
+            <p className="text-sm text-slate-600 dark:text-zinc-400">Room {multiplayerConfig?.roomCode} siap. Mode {multiplayerConfig?.settings?.mode}</p>
+            <p className="text-xs text-slate-500">MultiplayerGame akan tersedia di Task 4</p>
+          </div>
+        )}
       </main>
 
       <footer className="pt-8 text-center text-xs text-slate-500 dark:text-zinc-400">
