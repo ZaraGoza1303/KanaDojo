@@ -1,0 +1,47 @@
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-display: "Inter", ui-sans-serif, system-ui, sans-serif;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  @apply bg-slate-50 text-slate-900 antialiased dark:bg-zinc-900 dark:text-zinc-100;
+  min-height: 100vh;
+}
+
+::selection { background: rgba(39, 39, 42, 0.15); }
+.dark ::selection { background: rgba(244, 244, 245, 0.2); }
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  15% { transform: translateX(-6px); }
+  30% { transform: translateX(5px); }
+  45% { transform: translateX(-4px); }
+  60% { transform: translateX(3px); }
+}
+.animate-shake { animation: shake 0.4s ease; }
+
+@keyframes pop-in {
+  0% { transform: scale(0.96); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.animate-pop-in { animation: pop-in 0.2s ease-out both; }
+
+@keyframes rise-fade {
+  0% { transform: translateY(8px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+.animate-rise { animation: rise-fade 0.25s ease-out both; }
+
+@keyframes slide-down {
+  0% { transform: translateY(-6px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+.animate-slide-down { animation: slide-down 0.2s ease-out both; }
+
+input, textarea, button, select { font-family: inherit; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { scrollbar-width: none; }
