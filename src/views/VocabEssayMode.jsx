@@ -25,6 +25,12 @@ export default function VocabEssayMode({ progress, onExit }){
   const romaji = current ? kanaTextToRomaji(current.kana) : ''
 
   useEffect(()=>{ try{localStorage.setItem(ES_KEY, JSON.stringify({queue,pos,wrong,input,feedback,stats,done}))}catch{} },[queue,pos,wrong,input,feedback,stats,done])
+  useEffect(()=>{
+    if(!feedback) return
+    const h=(e)=>{ if(e.key==='Enter'){ e.preventDefault(); next() } }
+    window.addEventListener('keydown', h)
+    return ()=> window.removeEventListener('keydown', h)
+  },[feedback, next])
 
   const submit = useCallback(()=>{
     if(!current || !input.trim() || feedback) return
