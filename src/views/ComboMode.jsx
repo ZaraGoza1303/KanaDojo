@@ -382,7 +382,7 @@ export default function ComboMode({ progress, onExit }) {
         </div>
       </div>
 
-      {length !== 0 && <ProgressBar value={answered} max={total} />}
+      {length !== 0 && <ProgressBar value={queue ? queuePos : answered} max={queue ? queue.length : total} />}
 
       <Card
         className={`relative overflow-hidden p-8 text-center sm:p-12 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 ${
@@ -461,7 +461,7 @@ export default function ComboMode({ progress, onExit }) {
       </Card>
 
       <p className="text-center text-xs text-slate-600 dark:text-slate-500">
-        Soal ke-{answered + 1}{length !== 0 && ` dari ${total}`} · Tekan Enter untuk menjawab
+        Soal ke-{queue ? queuePos + 1 : answered + 1}{length !== 0 && ` dari ${queue ? queue.length : total}`} {queue && queue.length !== total && total!==Infinity ? `(awal ${total} soal)` : ''} · Tekan Enter untuk menjawab
       </p>
     </div>
   )
