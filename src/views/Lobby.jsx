@@ -234,13 +234,13 @@ export default function Lobby({ onStartGame, onBack, initialRoomCode }) {
 
               <div>
                 <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-slate-600 dark:text-zinc-400">Mode</label>
-                <Segmented value={settings.mode} onChange={(v) => setSettings((s) => {
-                  let len=s.length
-                  if(v==='translate') len=[1,2,5].includes(len)?len:2
-                  else if(v==='vocab') len=[10,20,30].includes(len)?len:20
-                  else len=[1,2,5].includes(len)?20:len
-                  return { ...s, mode: v, length: len }
-                })} options={[{ value: 'translate', label: 'Translate' },{ value: 'quiz', label: 'Tes Huruf' },{ value: 'combo', label: 'Combo' },{ value: 'vocab', label: 'Kosakata' }]} />
+                <select value={settings.mode} onChange={(e)=>{ const v=e.target.value; setSettings((s)=>{ let len=s.length; if(v==='translate') len=[1,2,5].includes(len)?len:2; else if(v==='vocab') len=[10,20,30].includes(len)?len:20; else len=[1,2,5].includes(len)?20:len; return {...s, mode:v, length:len} })}}
+                  className="w-full rounded-xl border border-slate-300 dark:border-zinc-600 bg-white dark:bg-zinc-700 px-4 py-3 text-sm font-medium text-slate-900 dark:text-white outline-none focus:border-zinc-500 focus:ring-2 focus:ring-zinc-500/20">
+                  <option value="translate">Translate</option>
+                  <option value="quiz">Tes Huruf</option>
+                  <option value="combo">Combo</option>
+                  <option value="vocab">Kosakata</option>
+                </select>
               </div>
 
               <div>
