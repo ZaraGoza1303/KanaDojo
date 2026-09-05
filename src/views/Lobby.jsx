@@ -255,10 +255,12 @@ export default function Lobby({ onStartGame, onBack, initialRoomCode }) {
               </div>
 
               <div className="flex flex-col gap-3">
-                <label className="flex cursor-pointer items-center gap-3 text-sm text-slate-900 dark:text-zinc-200">
-                  <input type="checkbox" checked={settings.dakuten} onChange={(e) => setSettings((s) => ({ ...s, dakuten: e.target.checked }))} className="h-4 w-4 accent-zinc-900" />
-                  <span>Sertakan dakuten dan handakuten <span className="text-slate-600 dark:text-zinc-400">(ga, pa, zo... · mode Tes Huruf)</span></span>
-                </label>
+                {settings.mode==='quiz' && (
+                  <label className="flex cursor-pointer items-center gap-3 text-sm text-slate-900 dark:text-zinc-200">
+                    <input type="checkbox" checked={settings.dakuten} onChange={(e) => setSettings((s) => ({ ...s, dakuten: e.target.checked }))} className="h-4 w-4 accent-zinc-900" />
+                    <span>Sertakan dakuten dan handakuten <span className="text-slate-600 dark:text-zinc-400">(ga, pa, zo...)</span></span>
+                  </label>
+                )}
                 <label className="flex cursor-pointer items-center gap-3 text-sm text-slate-900 dark:text-zinc-200">
                   <input type="checkbox" checked={settings.challenge} onChange={(e) => setSettings((s) => ({ ...s, challenge: e.target.checked }))} className="h-4 w-4 accent-zinc-900" />
                   <span>Challenge <span className="text-slate-600 dark:text-zinc-400">10 detik per soal</span></span>
