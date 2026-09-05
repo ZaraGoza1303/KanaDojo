@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useCallback } from 'react'
 import { VOCAB } from '../data/vocab.js'
 import { loadSRS, saveSRS, schedule, getQueue } from '../lib/srs.js'
-import { kanaTextToRomaji } from '../lib/romaji.js'
+import { kanaTextToRomaji, extractKana } from '../lib/romaji.js'
 import { Card, Button, Badge } from '../components/ui.jsx'
 
 const GRADE = [
@@ -11,15 +11,25 @@ const GRADE = [
   { v: 4, label: 'Easy', sub: '4d', tone: 'cyan', xp: 8 },
 ]
 
-const toneMap = { rose: 'rose', amber: 'amber', emerald: 'emerald', cyan: 'cyan', slate: 'slate', indigo: 'indigo' }
+function shuffle(arr) {
+  const a = [...arr]
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[a[i], a[j]] = [a[j], a[i]]
+  }
+  return a
+}
 
 export default function AnkiMode({ progress, onExit }) {
   const [srsMap, setSrsMap] = useState(() => loadSRS())
   const [flipped, setFlipped] = useState(false)
   const [history, setHistory] = useState([])
-  const [stats, setStats] = useState({ reviewed: 0, xp: 0 })
+  const [stats, setStats] = useState({ reviewed: 0, correct: 0, xp: 0 })
 
-  const queue = useMemo(() => getQueue(VOCAB, srsMap), [srsMap])
+  const queue = useMemo(() => {
+    const q = getQueue(VOCAB, srsMap)
+    return { ...q, newCards: shuffle(q.newCards) }
+  }, [srsMap])
   const current = queue.due[0] || queue.newCards[0] || queue.upcoming[0] || null
   const isNew = current ? !srsMap.has(current.id) : false
 
@@ -31,13 +41,17 @@ export default function AnkiMode({ progress, onExit }) {
     nextMap.set(current.id, next)
     saveSRS(nextMap)
     setSrsMap(nextMap)
-    setHistory((h) => [...h, { id: current.id, prev, grade }])
+    const kanas = extractKana(current.kana)
+    setHistory((h) => [...h, { id: current.id, prev, grade, kanas }])
     setFlipped(false)
     const xpGain = GRADE.find((g) => g.v === grade)?.xp ?? 3
-    setStats((s) => ({ reviewed: s.reviewed + 1, xp: s.xp + xpGain }))
+    const correct = grade >= 3
+    setStats((s) => ({ reviewed: s.reviewed + 1, correct: s.correct + (correct ? 1 : 0), xp: s.xp + xpGain }))
     try { progress?.addXp?.(xpGain) } catch {}
-    try { progress?.recordAnswer?.(grade >= 3, current.kana) } catch {}
-    try { progress?.recordAnswer?.(grade >= 3) } catch {}
+    try {
+      if (kanas.length) kanas.forEach((k) => progress?.recordAnswer?.(correct, k))
+      else progress?.recordAnswer?.(correct)
+    } catch {}
   }, [current, flipped, srsMap, progress])
 
   const doUndo = useCallback(() => {
@@ -50,29 +64,37 @@ export default function AnkiMode({ progress, onExit }) {
     setSrsMap(nextMap)
     setHistory((h) => h.slice(0, -1))
     const xpGain = GRADE.find((g) => g.v === last.grade)?.xp ?? 0
-    setStats((s) => ({ reviewed: Math.max(0, s.reviewed - 1), xp: Math.max(0, s.xp - xpGain) }))
+    const correct = last.grade >= 3
+    setStats((s) => ({ reviewed: Math.max(0, s.reviewed - 1), correct: Math.max(0, s.correct - (correct ? 1 : 0)), xp: Math.max(0, s.xp - xpGain) }))
+    try { progress?.addXp?.(-xpGain) } catch {}
+    try {
+      const kanas = last.kanas || []
+      if (kanas.length) kanas.forEach((k) => progress?.revertAnswer?.(correct, k) ?? progress?.recordAnswer?.(!correct, k))
+      else progress?.revertAnswer?.(correct) ?? progress?.recordAnswer?.(!correct)
+    } catch {}
     setFlipped(false)
-  }, [history, srsMap])
+  }, [history, srsMap, progress])
 
   const doReset = useCallback(() => {
-    if (!confirm('Reset semua progres Anki?')) return
+    if (!window.confirm('Reset semua progres Anki?')) return
     const m = new Map()
     saveSRS(m)
     setSrsMap(m)
     setHistory([])
-    setStats({ reviewed: 0, xp: 0 })
+    setStats({ reviewed: 0, correct: 0, xp: 0 })
     setFlipped(false)
   }, [])
 
   const handleExit = useCallback(() => {
     if (stats.reviewed > 0) {
       try {
+        const accuracy = stats.reviewed ? Math.round((stats.correct / stats.reviewed) * 100) : 0
         progress?.recordSession?.({
           mode: 'anki',
           label: `Anki ${stats.reviewed} kartu`,
-          accuracy: 100,
+          accuracy,
           count: stats.reviewed,
-          bestCombo: stats.reviewed,
+          bestCombo: stats.correct,
         })
       } catch {}
     }
