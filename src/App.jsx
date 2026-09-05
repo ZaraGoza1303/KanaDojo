@@ -5,6 +5,7 @@ import Home from './views/Home.jsx'
 import TranslateMode from './views/TranslateMode.jsx'
 import QuizMode from './views/QuizMode.jsx'
 import ComboMode from './views/ComboMode.jsx'
+import AnkiMode from './views/AnkiMode.jsx'
 import Lobby from './views/Lobby.jsx'
 
 export default function App() {
@@ -59,6 +60,7 @@ export default function App() {
         {view === 'translate' && <TranslateMode progress={progress} onExit={goHome} />}
         {view === 'quiz' && <QuizMode progress={progress} onExit={goHome} />}
         {view === 'combo' && <ComboMode progress={progress} onExit={goHome} />}
+        {view === 'anki' && <AnkiMode progress={progress} onExit={goHome} />}
         {view === 'lobby' && <Lobby onStartGame={handleStartGame} onBack={goHome} initialRoomCode={initialRoomCode} />}
         {view === 'multiplayer' && (
           <div className="mx-auto max-w-xl space-y-4 text-center">
