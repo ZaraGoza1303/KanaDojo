@@ -26,11 +26,11 @@ function tok(s){ return norm(s).replace(/[-']/g,' ').split(/\s+/).filter(Boolean
 const STOP = new Set(['dari','ke','di','yang','untuk','dengan','pada','dalam','itu','ini','juga','sekali','banget','sangat','akan','sudah','belum','oleh','atau','dan','adalah','merupakan','bisa','dapat'])
 const words = (s) => norm(s).replace(/[-']/g,' ').split(/\s+/).filter(Boolean)
 const keyWords = (s) => words(s).filter(w => !STOP.has(w))
-// kata dianggap sama bila identik atau typo ringan (levenshtein kecil)
+// kata dianggap sama bila identik atau typo 1 huruf saja (biar penynyo != penyanyi)
 const wordEq = (a, b) => {
   if (a === b) return true
   const L = Math.max(a.length, b.length)
-  return L >= 6 ? levenshtein(a, b) <= 2 : L >= 4 ? levenshtein(a, b) <= 1 : false
+  return L >= 4 ? levenshtein(a, b) <= 1 : false
 }
 
 export default function VocabEssayMode({ progress, onExit }){
