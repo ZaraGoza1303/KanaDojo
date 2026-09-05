@@ -255,7 +255,7 @@ export default function Lobby({ onStartGame, onBack, initialRoomCode }) {
               </div>
 
               <div className="flex flex-col gap-3">
-                {settings.mode==='quiz' && (
+                {(settings.mode==='quiz' || settings.mode==='combo') && (
                   <label className="flex cursor-pointer items-center gap-3 text-sm text-slate-900 dark:text-zinc-200">
                     <input type="checkbox" checked={settings.dakuten} onChange={(e) => setSettings((s) => ({ ...s, dakuten: e.target.checked }))} className="h-4 w-4 accent-zinc-900" />
                     <span>Sertakan dakuten dan handakuten <span className="text-slate-600 dark:text-zinc-400">(ga, pa, zo...)</span></span>
