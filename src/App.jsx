@@ -7,6 +7,8 @@ import QuizMode from './views/QuizMode.jsx'
 import ComboMode from './views/ComboMode.jsx'
 import VocabHub from './views/VocabHub.jsx'
 import Lobby from './views/Lobby.jsx'
+import MultiplayerGame from './views/MultiplayerGame.jsx'
+import { getActiveMultiplayer } from './lib/multiplayer.js'
 
 const APP_VIEW_KEY='kd-app-view'
 export default function App() {
@@ -73,10 +75,7 @@ export default function App() {
         {view === 'vocab' && <VocabHub progress={progress} onExit={goHome} />}
         {view === 'lobby' && <Lobby onStartGame={handleStartGame} onBack={goHome} initialRoomCode={initialRoomCode} />}
         {view === 'multiplayer' && (
-          <div className="mx-auto max-w-xl space-y-4 text-center">
-            <p className="text-sm text-slate-600 dark:text-zinc-400">Room {multiplayerConfig?.roomCode} siap. Mode {multiplayerConfig?.settings?.mode}</p>
-            <p className="text-xs text-slate-500">MultiplayerGame akan tersedia di Task 4</p>
-          </div>
+          <MultiplayerGame config={multiplayerConfig} progress={progress} onExit={goHome} multiplayer={getActiveMultiplayer()} />
         )}
       </main>
 
