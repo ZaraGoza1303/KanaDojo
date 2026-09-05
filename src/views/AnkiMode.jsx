@@ -69,8 +69,8 @@ export default function AnkiMode({ progress, onExit }) {
     try { progress?.addXp?.(-xpGain) } catch {}
     try {
       const kanas = last.kanas || []
-      if (kanas.length) kanas.forEach((k) => progress?.revertAnswer?.(correct, k) ?? progress?.recordAnswer?.(!correct, k))
-      else progress?.revertAnswer?.(correct) ?? progress?.recordAnswer?.(!correct)
+      if (kanas.length) kanas.forEach((k) => { if (progress?.revertAnswer) progress.revertAnswer(correct, k); else progress?.recordAnswer?.(!correct, k) })
+      else { if (progress?.revertAnswer) progress.revertAnswer(correct); else progress?.recordAnswer?.(!correct) }
     } catch {}
     setFlipped(false)
   }, [history, srsMap, progress])
