@@ -21,6 +21,7 @@ function formatTime(sec) {
   return m > 0 ? `${m}m ${s}s` : `${s}s`
 }
 
+const LIMIT = 2
 export default function TranslateMode({ progress, onExit }) {
   const [bag, setBag] = useState(makeBag)
   const [textIndex, setTextIndex] = useState(() => bag[0])
@@ -151,7 +152,7 @@ export default function TranslateMode({ progress, onExit }) {
         <div className="ml-auto flex items-center gap-2 text-xs text-slate-600 dark:text-zinc-400">
           <span>Waktu: {formatTime(elapsed)}</span>
           <span>·</span>
-          <span>{session.count} teks</span>
+          <span>{session.count}/{LIMIT} teks</span>
           {session.combo >= 2 && <Badge tone="amber">Combo x{session.combo}</Badge>}
         </div>
       </div>
@@ -185,8 +186,10 @@ export default function TranslateMode({ progress, onExit }) {
               <Button variant="ghost" onClick={nextText} title="Lewati teks ini" className="flex-1 sm:flex-none">Lewati</Button>
               <Button onClick={submit} className="w-full sm:w-auto">Periksa</Button>
             </div>
+          ) : session.count >= LIMIT ? (
+            <Button variant="success" onClick={finishSession} className="w-full sm:w-auto">Selesai ({LIMIT}/{LIMIT})</Button>
           ) : (
-            <Button variant="success" onClick={nextText} className="w-full sm:w-auto">Lanjut</Button>
+            <Button variant="success" onClick={nextText} className="w-full sm:w-auto">Lanjut ({session.count}/{LIMIT})</Button>
           )}
         </div>
 
@@ -278,13 +281,15 @@ export default function TranslateMode({ progress, onExit }) {
         </Card>
       )}
 
-      {session.count >= 3 && !submitted && (
+      {session.count > 0 && !submitted && (
         <div className="text-center text-xs text-slate-600 dark:text-zinc-400">
-          Sesi ini: {session.correct}/{session.count} bagus · rata-rata akurasi{' '}
-          <span className="font-bold text-emerald-700 dark:text-emerald-300">{Math.round(session.sumAccuracy / session.count)}%</span> · +{session.xp} XP 
-          <button onClick={finishSession} className="ml-1 font-semibold text-slate-900 dark:text-zinc-100 underline underline-offset-2">
-            akhiri sesi dan simpan
-          </button>
+          Sesi {session.count}/{LIMIT} · {session.correct} bagus · rata-rata{' '}
+          <span className="font-bold text-emerald-700 dark:text-emerald-300">{Math.round(session.sumAccuracy / session.count)}%</span> · +{session.xp} XP
+          {session.count >= LIMIT && (
+            <button onClick={finishSession} className="ml-1 font-semibold text-slate-900 dark:text-zinc-100 underline underline-offset-2">
+              akhiri sesi
+            </button>
+          )}
         </div>
       )}
     </div>
