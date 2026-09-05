@@ -50,11 +50,13 @@ export default function Lobby({ onStartGame, onBack, initialRoomCode }) {
       },
       onPeerLeave: () => setHostStatus('waiting'),
       onError: (err) => {
+        console.error('host err',err?.type,err?.message,err)
         if(err?.type==='unavailable-id'){
           setHostStatus('error')
-          setJoinError('Kode sudah dipakai, buat ulang.')
-        } else if(err){
-          console.error('host err',err)
+          setJoinError(`Kode ${code} sudah dipakai — buat ulang.`)
+        } else if(err?.type==='network' || err?.type==='server-error' || err?.type==='socket-error'){
+          setHostStatus('error')
+          setJoinError(`Host gagal konek ke PeerJS (${err.type}). Cek internet & refresh.`)
         }
       }
     })
