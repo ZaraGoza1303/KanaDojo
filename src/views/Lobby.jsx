@@ -234,12 +234,16 @@ export default function Lobby({ onStartGame, onBack, initialRoomCode }) {
 
               <div>
                 <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-slate-600 dark:text-zinc-400">Mode</label>
-                <Segmented value={settings.mode} onChange={(v) => setSettings((s) => ({ ...s, mode: v }))} options={[{ value: 'translate', label: 'Translate' },{ value: 'quiz', label: 'Tes Huruf' },{ value: 'combo', label: 'Combo' }]} />
+                <Segmented value={settings.mode} onChange={(v) => setSettings((s) => ({ ...s, mode: v, length: v==='translate' ? ([1,2,5].includes(s.length)?s.length:2) : [1,2,5].includes(s.length)?20:s.length }))} options={[{ value: 'translate', label: 'Translate' },{ value: 'quiz', label: 'Tes Huruf' },{ value: 'combo', label: 'Combo' }]} />
               </div>
 
               <div>
                 <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-slate-600 dark:text-zinc-400">Jumlah soal</label>
-                <Segmented value={settings.length} onChange={(v) => setSettings((s) => ({ ...s, length: v }))} options={[{ value: 20, label: '20 soal' },{ value: 30, label: '30 soal' },{ value: 0, label: 'Endless' }]} />
+                {settings.mode==='translate' ? (
+                  <Segmented value={settings.length} onChange={(v) => setSettings((s) => ({ ...s, length: v }))} options={[{ value: 1, label: '1 soal' },{ value: 2, label: '2 soal' },{ value: 5, label: '5 soal' }]} />
+                ) : (
+                  <Segmented value={settings.length} onChange={(v) => setSettings((s) => ({ ...s, length: v }))} options={[{ value: 20, label: '20 soal' },{ value: 30, label: '30 soal' },{ value: 0, label: 'Endless' }]} />
+                )}
               </div>
 
               <div className="flex flex-col gap-3">
