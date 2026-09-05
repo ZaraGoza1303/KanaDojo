@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect } from 'react'
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import { VOCAB } from '../data/vocab.js'
 import { kanaTextToRomaji, extractKana } from '../lib/romaji.js'
 import { Card, Button, Badge } from '../components/ui.jsx'
@@ -17,8 +17,8 @@ export default function VocabEssayMode({ progress, onExit }){
   const [feedback,setFeedback]=useState(()=> _s?.feedback || null)
   const [stats,setStats]=useState(()=> _s?.stats || {total:0, correct:0, xp:0})
   const [done,setDone]=useState(()=> !!_s?.done)
-  const uniqCorrectRef = React.useRef(new Set())
-  const uniqWrongRef = React.useRef(new Set())
+  const uniqCorrectRef = useRef(new Set())
+  const uniqWrongRef = useRef(new Set())
   const [showRomaji,setShowRomaji]=useState(()=>{ try{return localStorage.getItem('kd-show-romaji-essay')!=='0'}catch{return true}})
 
   const current = queue[pos]
