@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { Card, Button, Badge } from '../components/ui.jsx'
 import { TEXTS } from '../data/texts.js'
-import { kanaTextToRomaji, accuracy as calcAccuracy, diffChars, extractKana } from '../lib/romaji.js'
+import { kanaTextToRomaji, kanaTextToWordSegments, diffAnswerWords, accuracy as calcAccuracy, extractKana } from '../lib/romaji.js'
 import { fireConfetti } from '../lib/confetti.js'
 import { playCorrect, playWrong, playFinish } from '../lib/sound.js'
 import { comboMultiplier } from '../lib/progress.js'
@@ -35,14 +35,28 @@ export default function TranslateMode({ progress, onExit }) {
 
   const text = TEXTS[textIndex]
   const expected = useMemo(() => kanaTextToRomaji(text.kana), [text])
-  const chars = useMemo(() => {
+  const wordSegments = useMemo(() => kanaTextToWordSegments(text.kana), [text])
+  // Pecah teks kana asli jadi potongan kata & tanda baca, urutannya cocok
+  // dengan wordSegments supaya bisa diwarnai per kata
+  const kanaChunks = useMemo(() => {
+    let wi = 0
+    return text.kana
+      .split(/([、。！？「」…・,.!?\s]+)/)
+      .filter(Boolean)
+      .map((chunk) =>
+        /^[、。！？「」…・,.!?\s]+$/.test(chunk)
+          ? { chunk, wordIndex: null }
+          : { chunk, wordIndex: wi++ },
+      )
+  }, [text])
+  const wordResult = useMemo(() => {
     if (!submitted || typeof submitted.answer !== 'string') return null
     try {
-      return diffChars(submitted.answer, expected)
+      return diffAnswerWords(submitted.answer, wordSegments)
     } catch {
       return null
     }
-  }, [submitted, expected])
+  }, [submitted, wordSegments])
 
   useEffect(() => {
     if (submitted) return
@@ -209,23 +223,55 @@ export default function TranslateMode({ progress, onExit }) {
             </div>
             <div>
               <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-zinc-400">
+                Teks kana <span className="normal-case text-slate-500 dark:text-slate-500">(hijau = kata benar, merah = kata salah)</span>
+              </div>
+              <p className="break-words rounded-2xl border border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-900 px-4 py-3 text-base leading-loose">
+                {kanaChunks.map((c, i) => {
+                  if (c.wordIndex === null) return <span key={i}>{c.chunk}</span>
+                  const charStatus = wordResult?.kanaCharStatus?.[c.wordIndex]
+                  return (
+                    <span key={i}>
+                      {[...c.chunk].map((ch, k) => {
+                        const status = charStatus?.[k] ?? wordResult?.wordStatus?.[c.wordIndex] ?? 'ok'
+                        return (
+                          <span
+                            key={k}
+                            className={
+                              status === 'wrong'
+                                ? 'rounded bg-red-50 dark:bg-red-950 px-0.5 font-bold text-red-700 dark:text-red-300'
+                                : 'text-emerald-700 dark:text-emerald-300'
+                            }
+                          >
+                            {ch}
+                          </span>
+                        )
+                      })}
+                    </span>
+                  )
+                })}
+              </p>
+            </div>
+            <div>
+              <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-zinc-400">
                 Romaji yang benar <span className="normal-case text-slate-500 dark:text-slate-500">(hijau = benar, merah = salah)</span>
               </div>
               <p className="break-all rounded-2xl border border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-900 px-4 py-3 font-mono text-sm leading-relaxed">
-                {(chars ?? []).map((c, i) => (
-                  <span
-                    key={i}
-                    className={
-                      c.type === 'ok'
-                        ? 'text-emerald-700 dark:text-emerald-300'
-                        : c.type === 'wrong'
-                          ? 'rounded bg-red-50 dark:bg-red-950 px-0.5 text-red-700 dark:text-red-300'
-                          : 'rounded bg-red-50 dark:bg-red-950 px-0.5 text-red-700/60 dark:text-red-400/70 line-through'
-                    }
-                  >
-                    {c.char}
-                  </span>
-                ))}
+                {wordSegments.map((w, wi) => {
+                  const status = wordResult?.wordStatus?.[wi] ?? 'ok'
+                  return (
+                    <span
+                      key={wi}
+                      className={
+                        status === 'wrong'
+                          ? 'rounded bg-red-50 dark:bg-red-950 px-0.5 font-bold text-red-700 dark:text-red-300'
+                          : 'text-emerald-700 dark:text-emerald-300'
+                      }
+                    >
+                      {w.romaji}
+                      {wi < wordSegments.length - 1 && ' '}
+                    </span>
+                  )
+                })}
               </p>
             </div>
           </div>

@@ -115,15 +115,29 @@ export function useProgress() {
     })
   }, [])
 
-  /** Tambah XP (mis. setelah menjawab atau akhir sesi) + catat sesi. */
   const addXp = useCallback((amount) => {
     setState((s) => {
       const today = todayStr()
+      const delta = Math.round(amount)
       return {
         ...s,
-        xp: s.xp + Math.max(0, Math.round(amount)),
-        dailyXp: { ...s.dailyXp, [today]: (s.dailyXp[today] || 0) + Math.max(0, Math.round(amount)) },
+        xp: Math.max(0, s.xp + delta),
+        dailyXp: { ...s.dailyXp, [today]: Math.max(0, (s.dailyXp[today] || 0) + delta) },
       }
+    })
+  }, [])
+
+  const revertAnswer = useCallback((correct, kana = null) => {
+    setState((s) => {
+      const next = { ...s, mastered: { ...s.mastered } }
+      if (correct) next.totalCorrect = Math.max(0, s.totalCorrect - 1)
+      else next.totalWrong = Math.max(0, s.totalWrong - 1)
+      if (correct && kana && s.mastered[kana]) {
+        const c = s.mastered[kana] - 1
+        if (c <= 0) delete next.mastered[kana]
+        else next.mastered[kana] = c
+      }
+      return next
     })
   }, [])
 
@@ -172,6 +186,6 @@ export function useProgress() {
     level, levelInto: into, levelNeeded: needed, levelTitle: title,
     totalAnswers, overallAccuracy, masteredCount, masteredPercent,
     last7,
-    recordAnswer, addXp, recordSession, toggleSound, toggleTheme, resetAll,
+    recordAnswer, revertAnswer, addXp, recordSession, toggleSound, toggleTheme, resetAll,
   }
 }

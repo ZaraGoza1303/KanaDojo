@@ -10,28 +10,34 @@ import { playCorrect, playWrong, playCombo, playFinish, playClick } from '../lib
 import { comboMultiplier } from '../lib/progress.js'
 
 const CHALLENGE_SECONDS = 10
+const QUIZ_KEY='kd-quiz-state'
+const loadQuiz=()=>{try{const j=JSON.parse(localStorage.getItem(QUIZ_KEY)); if(j&&j.phase==='play') return j}catch{} return null}
 
 export default function QuizMode({ progress, onExit }) {
-  const [phase, setPhase] = useState('config')
-  const [filter, setFilter] = useState('mix')
-  const [dakuten, setDakuten] = useState(false)
-  const [length, setLength] = useState(20)
-  const [challenge, setChallenge] = useState(false)
+  const _q=loadQuiz()
+  const [phase, setPhase] = useState(_q?.phase || 'config')
+  const [filter, setFilter] = useState(_q?.filter || 'mix')
+  const [dakuten, setDakuten] = useState(_q?.dakuten || false)
+  const [length, setLength] = useState(_q?.length ?? 30)
+  const [challenge, setChallenge] = useState(_q?.challenge || false)
 
-  const [current, setCurrent] = useState(null)
+  const [current, setCurrent] = useState(_q?.current || null)
   const [answer, setAnswer] = useState('')
   const [feedback, setFeedback] = useState(null)
-  const [answered, setAnswered] = useState(0)
-  const [correctCount, setCorrectCount] = useState(0)
-  const [combo, setCombo] = useState(0)
-  const [bestCombo, setBestCombo] = useState(0)
-  const [mistakes, setMistakes] = useState([])
-  const [xpEarned, setXpEarned] = useState(0)
+  const [answered, setAnswered] = useState(_q?.answered || 0)
+  const [correctCount, setCorrectCount] = useState(_q?.correctCount || 0)
+  const [combo, setCombo] = useState(_q?.combo || 0)
+  const [bestCombo, setBestCombo] = useState(_q?.bestCombo || 0)
+  const [mistakes, setMistakes] = useState(_q?.mistakes || [])
+  const [pendingWrong, setPendingWrong] = useState(_q?.pendingWrong || [])
+  const [queue, setQueue] = useState(_q?.queue || null)
+  const [queuePos, setQueuePos] = useState(_q?.queuePos || 0)
+  const [xpEarned, setXpEarned] = useState(_q?.xpEarned || 0)
   const [hintReveal, setHintReveal] = useState(0)
   const [hintUsed, setHintUsed] = useState(false)
   const [timeLeft, setTimeLeft] = useState(CHALLENGE_SECONDS)
   const inputRef = useRef(null)
-  const answeredRef = useRef(0)
+  const answeredRef = useRef(_q?.answered || 0)
 
   const buildPool = useCallback(() => {
     let list = []
@@ -55,10 +61,33 @@ export default function QuizMode({ progress, onExit }) {
     },
     [buildPool],
   )
+  const buildQueue = useCallback((total) => {
+    const list = buildPool()
+    const q=[]
+    let prev=null
+    for(let i=0;i<total;i++){
+      let pick
+      do{ pick=list[Math.floor(Math.random()*list.length)] } while(list.length>1 && prev && pick[0]===prev)
+      q.push(pick)
+      prev=pick[0]
+    }
+    for(let i=q.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [q[i],q[j]]=[q[j],q[i]] }
+    return q
+  },[buildPool])
 
   const start = () => {
     playClick()
-    setCurrent(pickNext(null))
+    const t = length === 0 ? Infinity : length === 'all' ? buildPool().length : length
+    let q=null; let pos=0
+    if(Number.isFinite(t)){
+      q=buildQueue(t)
+      setQueue(q)
+      setQueuePos(0)
+      setCurrent(q[0])
+    } else {
+      setQueue(null)
+      setCurrent(pickNext(null))
+    }
     setPhase('play')
     setAnswer('')
     setFeedback(null)
@@ -68,6 +97,7 @@ export default function QuizMode({ progress, onExit }) {
     setCombo(0)
     setBestCombo(0)
     setMistakes([])
+    setPendingWrong([])
     setXpEarned(0)
     setHintReveal(0)
     setHintUsed(false)
@@ -75,13 +105,14 @@ export default function QuizMode({ progress, onExit }) {
     setTimeout(() => inputRef.current?.focus(), 50)
   }
 
-  const total = length === 0 ? Infinity : length
+  const total = length === 0 ? Infinity : length === 'all' ? buildPool().length : length
 
   const finish = () => {
+    try{localStorage.removeItem(QUIZ_KEY)}catch{}
     const accuracy = answeredRef.current > 0 ? Math.round((correctCount / answeredRef.current) * 100) : 0
     progress.recordSession({
       mode: 'quiz',
-      label: `Tes Huruf ${length === 0 ? 'Endless' : `${length} soal`}${challenge ? ' Challenge' : ''}`,
+      label: `Tes Huruf ${length === 0 ? 'Endless' : `${total} soal`}${challenge ? ' Challenge' : ''}`,
       accuracy,
       count: answeredRef.current,
       bestCombo,
@@ -105,9 +136,41 @@ export default function QuizMode({ progress, onExit }) {
     const t = setTimeout(() => setTimeLeft((s) => s - 1), 1000)
     return () => clearTimeout(t)
   }, [phase, challenge, timeLeft, feedback])
+  useEffect(()=>{ if(phase==='play'){ try{localStorage.setItem(QUIZ_KEY, JSON.stringify({phase, filter, dakuten, length, challenge, current, answered, correctCount, combo, bestCombo, mistakes, pendingWrong, queue, queuePos, xpEarned}))}catch{} } else { try{localStorage.removeItem(QUIZ_KEY)}catch{} } },[phase, filter, dakuten, length, challenge, current, answered, correctCount, combo, bestCombo, mistakes, pendingWrong, queue, queuePos, xpEarned])
 
   const next = (fromSubmit = false) => {
     if (!fromSubmit) bumpAnswered()
+    if (queue) {
+      const nextPos = queuePos + 1
+      if (nextPos >= queue.length) {
+        if (pendingWrong.length > 0) {
+          const retry=[...pendingWrong]
+          for(let i=retry.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[retry[i],retry[j]]=[retry[j],retry[i]]}
+          setQueue(retry)
+          setQueuePos(0)
+          setPendingWrong([])
+          setCurrent(retry[0])
+          setAnswer('')
+          setFeedback(null)
+          setHintReveal(0)
+          setHintUsed(false)
+          setTimeLeft(CHALLENGE_SECONDS)
+          setTimeout(()=>inputRef.current?.focus(),30)
+          return
+        }
+        finish()
+        return
+      }
+      setQueuePos(nextPos)
+      setCurrent(queue[nextPos])
+      setAnswer('')
+      setFeedback(null)
+      setHintReveal(0)
+      setHintUsed(false)
+      setTimeLeft(CHALLENGE_SECONDS)
+      setTimeout(() => inputRef.current?.focus(), 30)
+      return
+    }
     if (answeredRef.current >= total) {
       finish()
       return
@@ -150,6 +213,7 @@ export default function QuizMode({ progress, onExit }) {
     } else {
       setCombo(0)
       setMistakes((m) => [...m, { kana, romaji, typed: timeout ? '(waktu habis!)' : answer.trim() }])
+      if(queue) setPendingWrong((p)=>[...p, [kana, romaji]])
       progress.recordAnswer(false)
       progress.addXp(1)
       setFeedback('wrong')
@@ -205,8 +269,8 @@ export default function QuizMode({ progress, onExit }) {
               value={length}
               onChange={setLength}
               options={[
-                { value: 20, label: '20 soal' },
                 { value: 30, label: '30 soal' },
+                { value: 'all', label: 'Semua' },
                 { value: 0, label: 'Endless' },
               ]}
             />
@@ -292,6 +356,7 @@ export default function QuizMode({ progress, onExit }) {
         </Button>
         <Badge tone={isKatakana ? 'cyan' : 'indigo'}>{isKatakana ? 'Katakana' : 'Hiragana'}</Badge>
         {challenge && <Badge tone={timeLeft <= 3 ? 'rose' : 'slate'}>Waktu: {timeLeft}s</Badge>}
+        {queue && pendingWrong.length>0 && <Badge tone="rose">Salah {pendingWrong.length} akan diulang</Badge>}
         <div className="ml-auto flex items-center gap-3 text-xs text-slate-600 dark:text-zinc-400">
           <span>Akurasi: {liveAccuracy}%</span>
           <span className={combo >= 3 ? 'font-bold text-amber-700 dark:text-amber-300' : ''}>
@@ -300,7 +365,7 @@ export default function QuizMode({ progress, onExit }) {
         </div>
       </div>
 
-      {length !== 0 && <ProgressBar value={answered} max={length} />}
+      {length !== 0 && <ProgressBar value={answered} max={total} />}
 
       <Card
         className={`relative overflow-hidden p-8 text-center sm:p-12 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 ${
@@ -362,7 +427,7 @@ export default function QuizMode({ progress, onExit }) {
       </Card>
 
       <p className="text-center text-xs text-slate-600 dark:text-slate-500">
-        Soal ke-{answered + 1}{length !== 0 && ` dari ${length}`} · Tekan Enter untuk menjawab
+        Soal ke-{answered + 1}{length !== 0 && ` dari ${total}`} · Tekan Enter untuk menjawab
       </p>
     </div>
   )

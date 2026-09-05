@@ -1,0 +1,11 @@
+node_modules
+dist
+.superpowers
+gui-test-screenshots
+playwright-report
+test-results
+docs
+.env
+.env.local
+.vercel
+.DS_Store

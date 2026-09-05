@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { Card, Button, Badge, Segmented } from '../components/ui.jsx'
-import { genRoomCode, createMultiplayer } from '../lib/multiplayer.js'
+import { genRoomCode, createMultiplayer, setActiveMultiplayer } from '../lib/multiplayer.js'
 
 export default function Lobby({ onStartGame, onBack, initialRoomCode }) {
   const [roomCode, setRoomCode] = useState('')
@@ -9,16 +9,21 @@ export default function Lobby({ onStartGame, onBack, initialRoomCode }) {
   const [joinStatus, setJoinStatus] = useState('idle')
   const [joinError, setJoinError] = useState('')
   const [copied, setCopied] = useState(false)
-  const [settings, setSettings] = useState({ mode: 'quiz', length: 20, challenge: false })
+  const [settings, setSettings] = useState({ mode: 'quiz', length: 20, challenge: false, dakuten: false })
   const mpRef = useRef(null)
   const seedRef = useRef('')
+  const startedRef = useRef(false)
 
   useEffect(() => {
     if (initialRoomCode) setJoinCode(initialRoomCode.toUpperCase())
   }, [initialRoomCode])
 
   useEffect(() => {
-    return () => { try { mpRef.current?.destroy() } catch {} }
+    return () => {
+      // Jangan destroy kalau lobby unmount karena game dimulai —
+      // koneksi dipindah ke MultiplayerGame via registry aktif.
+      if (!startedRef.current) { try { mpRef.current?.destroy() } catch {} }
+    }
   }, [])
 
   useEffect(() => {
@@ -46,6 +51,7 @@ export default function Lobby({ onStartGame, onBack, initialRoomCode }) {
       onPeerLeave: () => setHostStatus('waiting'),
     })
     mpRef.current = mp
+    setActiveMultiplayer(mp)
     mp.host(code)
   }
 
@@ -64,18 +70,33 @@ export default function Lobby({ onStartGame, onBack, initialRoomCode }) {
           if (data.seed) seedRef.current = data.seed
         }
         if (data.type === 'start') {
+          startedRef.current = true
           onStartGame({ roomCode: code, seed: data.seed || seedRef.current, settings: data.settings || settings, isHost: false })
         }
       },
-      onPeerJoin: () => setJoinStatus('connected'),
-      onPeerLeave: () => setJoinStatus('idle'),
+      onPeerJoin: () => { setJoinStatus('connected'); setJoinError('') },
+      onPeerLeave: () => setJoinStatus((s)=> s==='connected' ? 'idle':'error'),
+      onError: (err) => {
+        if(err?.type==='peer-unavailable'){
+          setJoinStatus('error')
+          setJoinError(`Room ${code} tidak ditemukan — host mungkin belum buat room atau sudah keluar. Coba host buat ulang.`)
+        } else if(err?.type==='network' || err?.type==='server-error'){
+          setJoinStatus('error')
+          setJoinError('Gagal konek ke server PeerJS. Cek internet / coba HTTPS.')
+        }
+      }
     })
     mpRef.current = mp
+    setActiveMultiplayer(mp)
     mp.join(code)
     setTimeout(() => {
       setJoinStatus((s) => s === 'connecting' ? 'error' : s)
-      setJoinError((prev) => prev || 'Gagal terhubung. Periksa kode dan coba lagi.')
-    }, 8000)
+      setJoinError((prev) => {
+        if(prev) return prev
+        const peerId = mp.getPeer()?.id || 'unknown'
+        return `Gagal terhubung ke ${code} (peer ${peerId.slice(0,8)}…). Host pastikan masih di Waiting & pakai ngrok HTTPS yang sama. Coba host Buat Ulang Kode.`
+      })
+    }, 15000)
   }
 
   const handleCopy = async (text) => {
@@ -83,6 +104,7 @@ export default function Lobby({ onStartGame, onBack, initialRoomCode }) {
   }
 
   const handleStartGame = () => {
+    startedRef.current = true
     const seed = seedRef.current || roomCode + '-' + Date.now().toString(36)
     seedRef.current = seed
     try { mpRef.current?.send({ type: 'start', seed, settings, roomCode }) } catch {}
@@ -134,10 +156,16 @@ export default function Lobby({ onStartGame, onBack, initialRoomCode }) {
                 <Segmented value={settings.length} onChange={(v) => setSettings((s) => ({ ...s, length: v }))} options={[{ value: 20, label: '20 soal' },{ value: 30, label: '30 soal' },{ value: 0, label: 'Endless' }]} />
               </div>
 
-              <label className="flex cursor-pointer items-center gap-3 text-sm text-slate-900 dark:text-zinc-200">
-                <input type="checkbox" checked={settings.challenge} onChange={(e) => setSettings((s) => ({ ...s, challenge: e.target.checked }))} className="h-4 w-4 accent-zinc-900" />
-                <span>Challenge <span className="text-slate-600 dark:text-zinc-400">10 detik per soal</span></span>
-              </label>
+              <div className="flex flex-col gap-3">
+                <label className="flex cursor-pointer items-center gap-3 text-sm text-slate-900 dark:text-zinc-200">
+                  <input type="checkbox" checked={settings.dakuten} onChange={(e) => setSettings((s) => ({ ...s, dakuten: e.target.checked }))} className="h-4 w-4 accent-zinc-900" />
+                  <span>Sertakan dakuten dan handakuten <span className="text-slate-600 dark:text-zinc-400">(ga, pa, zo... · mode Tes Huruf)</span></span>
+                </label>
+                <label className="flex cursor-pointer items-center gap-3 text-sm text-slate-900 dark:text-zinc-200">
+                  <input type="checkbox" checked={settings.challenge} onChange={(e) => setSettings((s) => ({ ...s, challenge: e.target.checked }))} className="h-4 w-4 accent-zinc-900" />
+                  <span>Challenge <span className="text-slate-600 dark:text-zinc-400">10 detik per soal</span></span>
+                </label>
+              </div>
 
               <Button onClick={handleStartGame} className="w-full" disabled={hostStatus !== 'connected'}>Mulai Game</Button>
               {hostStatus === 'waiting' && <p className="text-center text-xs text-slate-500 dark:text-zinc-400">Tunggu lawan bergabung untuk memulai</p>}
@@ -167,6 +195,7 @@ export default function Lobby({ onStartGame, onBack, initialRoomCode }) {
                 <div className="mt-2 flex flex-wrap gap-1.5 text-xs">
                   <Badge tone="slate">{settings.mode}</Badge>
                   <Badge tone="slate">{settings.length === 0 ? 'Endless' : `${settings.length} soal`}</Badge>
+                  {settings.dakuten && <Badge tone="slate">Dakuten</Badge>}
                   {settings.challenge && <Badge tone="amber">Challenge</Badge>}
                 </div>
               </div>

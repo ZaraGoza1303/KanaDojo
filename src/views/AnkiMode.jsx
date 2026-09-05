@@ -11,13 +11,16 @@ const GRADE = [
   { v: 4, label: 'Easy', sub: '4d', tone: 'cyan', xp: 8 },
 ]
 
+const ANKI_SESS_KEY='kd-anki-session'
+const loadAnkiSess=()=>{try{const j=JSON.parse(localStorage.getItem(ANKI_SESS_KEY)); if(j) return j}catch{} return null}
 export default function AnkiMode({ progress, onExit }) {
+  const _as=loadAnkiSess()
   const [srsMap, setSrsMap] = useState(() => loadSRS())
-  const [flipped, setFlipped] = useState(false)
-  const [history, setHistory] = useState([])
-  const [stats, setStats] = useState({ reviewed: 0, correct: 0, xp: 0 })
-  const [reviewAhead, setReviewAhead] = useState(false)
-  const [newOrder] = useState(() => {
+  const [flipped, setFlipped] = useState(_as?.flipped || false)
+  const [history, setHistory] = useState(_as?.history || [])
+  const [stats, setStats] = useState(_as?.stats || { reviewed: 0, correct: 0, xp: 0 })
+  const [reviewAhead, setReviewAhead] = useState(_as?.reviewAhead || false)
+  const [newOrder, setNewOrder] = useState(() => {
     const a = [...VOCAB]
     for (let i = a.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1))
@@ -27,10 +30,23 @@ export default function AnkiMode({ progress, onExit }) {
     a.forEach((v, i) => m.set(v.id, i))
     return m
   })
+  const regenOrder = () => {
+    const a=[...VOCAB]; for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}
+    const m=new Map(); a.forEach((v,i)=>m.set(v.id,i)); setNewOrder(m)
+  }
 
   const queue = useMemo(() => {
     const q = getQueue(VOCAB, srsMap)
     q.newCards.sort((a, b) => (newOrder.get(a.id) ?? 0) - (newOrder.get(b.id) ?? 0))
+    const LIMIT=30
+    if(q.due.length + q.newCards.length > LIMIT){
+      if(q.due.length >= LIMIT){
+        q.due = q.due.slice(0, LIMIT)
+        q.newCards = []
+      } else {
+        q.newCards = q.newCards.slice(0, LIMIT - q.due.length)
+      }
+    }
     return q
   }, [srsMap, newOrder])
   const current = queue.due[0] || queue.newCards[0] || (reviewAhead ? queue.upcoming[0] : null) || null
@@ -87,9 +103,12 @@ export default function AnkiMode({ progress, onExit }) {
     setStats({ reviewed: 0, correct: 0, xp: 0 })
     setFlipped(false)
     setReviewAhead(false)
+    regenOrder()
   }, [])
 
+  useEffect(()=>{ try{localStorage.setItem(ANKI_SESS_KEY, JSON.stringify({flipped,history,stats,reviewAhead}))}catch{} },[flipped,history,stats,reviewAhead])
   const handleExit = useCallback(() => {
+    try{localStorage.removeItem(ANKI_SESS_KEY)}catch{}
     if (stats.reviewed > 0) {
       try {
         const accuracy = stats.reviewed ? Math.round((stats.correct / stats.reviewed) * 100) : 0
@@ -131,8 +150,7 @@ export default function AnkiMode({ progress, onExit }) {
     )
   }
 
-  const total = VOCAB.length
-  const studied = total - queue.newCards.length
+  const total = 30
   const romaji = current ? kanaTextToRomaji(current.kana) : ''
   const contohRomaji = current?.contoh_kana ? kanaTextToRomaji(current.contoh_kana) : ''
   const upcomingDueMs = queue.upcoming.length ? Math.min(...queue.upcoming.map((c) => c._s.due)) - Date.now() : 0
@@ -173,7 +191,7 @@ export default function AnkiMode({ progress, onExit }) {
         <Badge tone="indigo">Anki</Badge>
         <Badge tone="rose">Due {queue.due.length}</Badge>
         <Badge tone="cyan">Baru {queue.newCards.length}</Badge>
-        <Badge tone="slate">{studied}/{total}</Badge>
+        <Badge tone="slate">{stats.reviewed}/{total}</Badge>
         <div className="ml-auto flex items-center gap-2 text-xs text-slate-600 dark:text-zinc-400">
           <span>{stats.reviewed} kartu</span>
           <span className="font-semibold text-emerald-700 dark:text-emerald-300">+{stats.xp} XP</span>

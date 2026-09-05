@@ -7,29 +7,37 @@ import { playCorrect, playWrong, playCombo, playFinish, playClick } from '../lib
 import { comboMultiplier } from '../lib/progress.js'
 
 const CHALLENGE_SECONDS = 12
+const COMBO_KEY='kd-combo-state'
+const loadCombo=()=>{try{const j=JSON.parse(localStorage.getItem(COMBO_KEY)); if(j&&j.phase==='play') return j}catch{} return null}
 
 const SINGLE_LETTERS = [
   ...EXTENDED_KANA.map((e) => [e.kana, e.romaji, null]),
   ...YOON_KANA.map(([k, r]) => [k, r, null]),
 ]
 const WORDS = LOANWORDS.map((w) => [w.kana, w.romaji, w.arti, w.combo])
+const LETTERS = SINGLE_LETTERS
 
 export default function ComboMode({ progress, onExit }) {
-  const [phase, setPhase] = useState('config')
-  const [subMode, setSubMode] = useState('letters')
-  const [length, setLength] = useState(20)
-  const [challenge, setChallenge] = useState(false)
+  const _c=loadCombo()
+  const [phase, setPhase] = useState(_c?.phase || 'config')
+  const [subMode, setSubMode] = useState(_c?.subMode || 'letters')
+  const usedRef = useRef(new Set())
+  const [length, setLength] = useState(_c?.length ?? 30)
+  const [challenge, setChallenge] = useState(_c?.challenge || false)
 
-  const [current, setCurrent] = useState(null)
+  const [current, setCurrent] = useState(_c?.current || null)
   const [answer, setAnswer] = useState('')
   const [feedback, setFeedback] = useState(null)
-  const [answered, setAnswered] = useState(0)
-  const answeredRef = useRef(0)
-  const [correctCount, setCorrectCount] = useState(0)
-  const [combo, setCombo] = useState(0)
-  const [bestCombo, setBestCombo] = useState(0)
-  const [mistakes, setMistakes] = useState([])
-  const [xpEarned, setXpEarned] = useState(0)
+  const [answered, setAnswered] = useState(_c?.answered || 0)
+  const answeredRef = useRef(_c?.answered || 0)
+  const [correctCount, setCorrectCount] = useState(_c?.correctCount || 0)
+  const [combo, setCombo] = useState(_c?.combo || 0)
+  const [bestCombo, setBestCombo] = useState(_c?.bestCombo || 0)
+  const [mistakes, setMistakes] = useState(_c?.mistakes || [])
+  const [pendingWrong, setPendingWrong] = useState(_c?.pendingWrong || [])
+  const [queue, setQueue] = useState(_c?.queue || null)
+  const [queuePos, setQueuePos] = useState(_c?.queuePos || 0)
+  const [xpEarned, setXpEarned] = useState(_c?.xpEarned || 0)
   const [hintReveal, setHintReveal] = useState(0)
   const [hintUsed, setHintUsed] = useState(false)
   const [showArti, setShowArti] = useState(false)
@@ -37,26 +45,53 @@ export default function ComboMode({ progress, onExit }) {
   const inputRef = useRef(null)
 
   const pool = useCallback(() => {
-    if (subMode === 'letters') return SINGLE_LETTERS
+    if (subMode === 'letters') return LETTERS
     if (subMode === 'words') return WORDS
-    return [...SINGLE_LETTERS, ...WORDS]
+    return [...LETTERS, ...WORDS]
   }, [subMode])
 
   const pickNext = useCallback(
     (prevKana) => {
       const list = pool()
+      // Jangan ulang yang sudah dijawab sesi ini; kalau habis, mulai putaran baru
+      const fresh = list.filter((item) => !usedRef.current.has(item[0]))
+      const source = fresh.length > 0 ? fresh : (usedRef.current.clear(), list)
       let pick
       do {
-        pick = list[Math.floor(Math.random() * list.length)]
-      } while (list.length > 1 && prevKana && pick[0] === prevKana)
+        pick = source[Math.floor(Math.random() * source.length)]
+      } while (source.length > 1 && prevKana && pick[0] === prevKana)
       return pick
     },
     [pool],
   )
 
+  const buildQueue = useCallback((total) => {
+    const list = pool()
+    const q=[]
+    let prev=null
+    for(let i=0;i<total;i++){
+      let pick
+      do{ pick=list[Math.floor(Math.random()*list.length)] } while(list.length>1 && prev && pick[0]===prev)
+      q.push(pick)
+      prev=pick[0]
+    }
+    for(let i=q.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[q[i],q[j]]=[q[j],q[i]]}
+    return q
+  },[pool])
   const start = () => {
     playClick()
-    setCurrent(pickNext(null))
+    usedRef.current = new Set()
+    const t = pool().length ? (length === 0 ? Infinity : length === 'all' ? pool().length : length) : length
+    let q=null
+    if(Number.isFinite(t)){
+      q=buildQueue(t)
+      setQueue(q)
+      setQueuePos(0)
+      setCurrent(q[0])
+    } else {
+      setQueue(null)
+      setCurrent(pickNext(null))
+    }
     setPhase('play')
     setAnswer('')
     setFeedback(null)
@@ -66,6 +101,7 @@ export default function ComboMode({ progress, onExit }) {
     setCombo(0)
     setBestCombo(0)
     setMistakes([])
+    setPendingWrong([])
     setXpEarned(0)
     setHintReveal(0)
     setHintUsed(false)
@@ -74,14 +110,15 @@ export default function ComboMode({ progress, onExit }) {
     setTimeout(() => inputRef.current?.focus(), 50)
   }
 
-  const total = length === 0 ? Infinity : length
+  const total = length === 0 ? Infinity : length === 'all' ? pool().length : length
 
   const finish = () => {
+    try{localStorage.removeItem(COMBO_KEY)}catch{}
     const accuracy = answeredRef.current > 0 ? Math.round((correctCount / answeredRef.current) * 100) : 0
-    const labelMap = { letters: 'Huruf Kombinasi', words: 'Kata Serapan', mix: 'Campuran Kombinasi' }
+      const labelMap = { letters: 'Huruf Kombinasi', words: 'Kata Serapan' }
     progress.recordSession({
       mode: 'combo',
-      label: `${labelMap[subMode]} ${length === 0 ? 'Endless' : `${length} soal`}${challenge ? ' Challenge' : ''}`,
+      label: `${labelMap[subMode]} ${length === 0 ? 'Endless' : `${total} soal`}${challenge ? ' Challenge' : ''}`,
       accuracy,
       count: answeredRef.current,
       bestCombo,
@@ -105,9 +142,46 @@ export default function ComboMode({ progress, onExit }) {
     const t = setTimeout(() => setTimeLeft((s) => s - 1), 1000)
     return () => clearTimeout(t)
   }, [phase, challenge, timeLeft, feedback])
+  useEffect(()=>{ if(phase==='play'){ try{localStorage.setItem(COMBO_KEY, JSON.stringify({phase, subMode, length, challenge, current, answered, correctCount, combo, bestCombo, mistakes, pendingWrong, queue, queuePos, xpEarned}))}catch{} } else { try{localStorage.removeItem(COMBO_KEY)}catch{} } },[phase, subMode, length, challenge, current, answered, correctCount, combo, bestCombo, mistakes, pendingWrong, queue, queuePos, xpEarned])
 
   const next = (fromSubmit = false) => {
-    if (!fromSubmit) bumpAnswered()
+    if (!fromSubmit) {
+      bumpAnswered()
+      if (feedback === null && current !== null) usedRef.current.add(current[0])
+    }
+    if (queue) {
+      const nextPos = queuePos + 1
+      if (nextPos >= queue.length) {
+        if (pendingWrong.length > 0) {
+          const retry=[...pendingWrong]
+          for(let i=retry.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[retry[i],retry[j]]=[retry[j],retry[i]]}
+          setQueue(retry)
+          setQueuePos(0)
+          setPendingWrong([])
+          setCurrent(retry[0])
+          setAnswer('')
+          setFeedback(null)
+          setHintReveal(0)
+          setHintUsed(false)
+          setShowArti(false)
+          setTimeLeft(CHALLENGE_SECONDS)
+          setTimeout(()=>inputRef.current?.focus(),30)
+          return
+        }
+        finish()
+        return
+      }
+      setQueuePos(nextPos)
+      setCurrent(queue[nextPos])
+      setAnswer('')
+      setFeedback(null)
+      setHintReveal(0)
+      setHintUsed(false)
+      setShowArti(false)
+      setTimeLeft(CHALLENGE_SECONDS)
+      setTimeout(() => inputRef.current?.focus(), 30)
+      return
+    }
     if (answeredRef.current >= total) {
       finish()
       return
@@ -127,6 +201,7 @@ export default function ComboMode({ progress, onExit }) {
     const [kana, romaji] = current
     const acc = timeout ? 0 : calcAccuracy(answer, romaji)
     const correct = acc >= 90
+    usedRef.current.add(kana)
     bumpAnswered()
 
     if (correct) {
@@ -152,6 +227,7 @@ export default function ComboMode({ progress, onExit }) {
     } else {
       setCombo(0)
       setMistakes((m) => [...m, { kana, romaji, typed: timeout ? '(waktu habis!)' : answer.trim() }])
+      if(queue) setPendingWrong((p)=>[...p, [kana, romaji, current[2], current[3]]])
       progress.recordAnswer(false)
       progress.addXp(1)
       setFeedback('wrong')
@@ -202,13 +278,11 @@ export default function ComboMode({ progress, onExit }) {
               options={[
                 { value: 'letters', label: 'Huruf kombinasi' },
                 { value: 'words', label: 'Kata Serapan' },
-                { value: 'mix', label: 'Campur' },
               ]}
             />
             <p className="mt-2 text-xs text-slate-600 dark:text-zinc-400">
-              {subMode === 'letters' && 'Satu kombinasi muncul ketik romaji-nya.'}
+              {subMode === 'letters' && 'Satu kombinasi muncul ketik romaji-nya. Semua multi-huruf: ファ・ティ・きゃ, termasuk varian dakuten (ジェ, ぎゅ, ヴァ...).'}
               {subMode === 'words' && 'Kata lengkap berisi kombinasi sulit muncul ketik romaji utuhnya.'}
-              {subMode === 'mix' && 'Campuran huruf tunggal dan kata serapan.'}
             </p>
           </div>
 
@@ -218,8 +292,8 @@ export default function ComboMode({ progress, onExit }) {
               value={length}
               onChange={setLength}
               options={[
-                { value: 20, label: '20 soal' },
                 { value: 30, label: '30 soal' },
+                { value: 'all', label: 'Semua' },
                 { value: 0, label: 'Endless' },
               ]}
             />
@@ -299,6 +373,7 @@ export default function ComboMode({ progress, onExit }) {
         </Button>
         <Badge tone={isWord ? 'cyan' : 'indigo'}>{isWord ? 'Kata Serapan' : 'Huruf Kombinasi'}</Badge>
         {challenge && <Badge tone={timeLeft <= 3 ? 'rose' : 'slate'}>Waktu: {timeLeft}s</Badge>}
+        {queue && pendingWrong.length>0 && <Badge tone="rose">Salah {pendingWrong.length} akan diulang</Badge>}
         <div className="ml-auto flex items-center gap-3 text-xs text-slate-600 dark:text-zinc-400">
           <span>Akurasi: {liveAccuracy}%</span>
           <span className={combo >= 3 ? 'font-bold text-amber-700 dark:text-amber-300' : ''}>
@@ -307,7 +382,7 @@ export default function ComboMode({ progress, onExit }) {
         </div>
       </div>
 
-      {length !== 0 && <ProgressBar value={answered} max={length} />}
+      {length !== 0 && <ProgressBar value={answered} max={total} />}
 
       <Card
         className={`relative overflow-hidden p-8 text-center sm:p-12 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 ${
@@ -386,7 +461,7 @@ export default function ComboMode({ progress, onExit }) {
       </Card>
 
       <p className="text-center text-xs text-slate-600 dark:text-slate-500">
-        Soal ke-{answered + 1}{length !== 0 && ` dari ${length}`} · Tekan Enter untuk menjawab
+        Soal ke-{answered + 1}{length !== 0 && ` dari ${total}`} · Tekan Enter untuk menjawab
       </p>
     </div>
   )

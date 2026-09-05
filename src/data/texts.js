@@ -161,4 +161,254 @@ export const TEXTS = [
     id: 38, category: 'Rencana & Liburan', difficulty: 3,
     kana: 'なつやすみに ともだちと ふじさんに のぼる けいかくを しています。よなかから のぼって、あさひを てっぺんで みるつもりです。アウトドアようの くつも かいました。あまり つかれて いなければ いいのですが。',
   },
+
+  // ---------- EXTENDED: 39-100 (mix variatif) ----------
+  {
+    id: 39, category: 'Teknologi', difficulty: 1,
+    kana: 'スマホで しゃしんを とりました。とても きれいです。ともだちに おくりました。へんじが すぐに きました。',
+  },
+  {
+    id: 40, category: 'Anime & Manga', difficulty: 1,
+    kana: 'わたしは アニメが だいすきです。まいしゅう あたらしい エピソードを みます。キャラクターが かっこいいです。',
+  },
+  {
+    id: 41, category: 'Traveling Modern', difficulty: 1,
+    kana: 'えきで チケットを かいました。しんかんせんで とうきょうへ いきます。まどから ふじさんが みえます。',
+  },
+  {
+    id: 42, category: 'Kuliner', difficulty: 1,
+    kana: 'コンビニで おにぎりを かいました。ツナマヨが おいしいです。おちゃも いっしょに かいました。',
+  },
+  {
+    id: 43, category: 'Kantor & Bisnis', difficulty: 1,
+    kana: 'かいしゃで メールを かきます。まいあさ れんらくを します。ひるに ミーティングが あります。',
+  },
+  {
+    id: 44, category: 'Hobi Digital', difficulty: 1,
+    kana: 'スマホで ゲームを します。パズルゲームが すきです。しゅうまつは いちじかん あそびます。',
+  },
+  {
+    id: 45, category: 'Keseharian', difficulty: 1,
+    kana: 'あさは トーストと コーヒーです。ひるは コンビニの おべんとうを たべます。よるは うどんを つくります。',
+  },
+  {
+    id: 46, category: 'Musik & Streaming', difficulty: 1,
+    kana: 'ユーチューブで おんがくを ききます。すきな アーティストの ライブを みました。とても たのしかったです。',
+  },
+  {
+    id: 47, category: 'Belanja Online', difficulty: 1,
+    kana: 'ネットで スニーカーを かいました。サイズは エムです。いろは しろと くろです。はくのが たのしみです。',
+  },
+  {
+    id: 48, category: 'Olahraga', difficulty: 1,
+    kana: 'まいあさ ジョギングを します。こうえんで はしります。あせを かくと きもちいいです。',
+  },
+  {
+    id: 49, category: 'Percakapan', difficulty: 1,
+    kana: '「この アプリ、しってる？」「うん、べんりだよね。」「そう、まいにち つかってる。」',
+  },
+  {
+    id: 50, category: 'Kuliner', difficulty: 1,
+    kana: 'ラーメンやで ギョーザも たのみました。ビールも のみました。おなかが いっぱいです。',
+  },
+  {
+    id: 51, category: 'Teknologi', difficulty: 2,
+    kana: 'さいきん、エーアイで えを つくっています。プロンプトを かくと、すぐに えが できます。とても おもしろいですが、ときどき へんな えに なります。',
+  },
+  {
+    id: 52, category: 'Anime & Manga', difficulty: 2,
+    kana: 'ジャンプの マンガを まいしゅう よみます。バトルシーンが すごいです。らいしゅうの てんかいが たのしみです。アニメも みています。',
+  },
+  {
+    id: 53, category: 'Traveling Modern', difficulty: 2,
+    kana: 'エアビーアンドビーで アパートを よやくしました。えきから あるいて ごふんです。レビューが よかったので きめました。',
+  },
+  {
+    id: 54, category: 'Kantor & Bisnis', difficulty: 2,
+    kana: 'リモートワークで ズームかいぎを します。マイクが オフに なっていて、きづきませんでした。みんなが わらいました。',
+  },
+  {
+    id: 55, category: 'Hobi Digital', difficulty: 2,
+    kana: 'ツイッターで しゃしんを シェアしました。いいねが たくさん つきました。フォロワーが ふえました。うれしいです。',
+  },
+  {
+    id: 56, category: 'Kuliner', difficulty: 2,
+    kana: 'ウーバーイーツで カレーを ちゅうもんしました。ナンと サラダも ついていました。はこが きれいでした。おいしかったです。',
+  },
+  {
+    id: 57, category: 'Musik & Streaming', difficulty: 2,
+    kana: 'スポティファイで プレイリストを つくりました。ドライブようの きょくを あつめました。ともだちに シェアしました。',
+  },
+  {
+    id: 58, category: 'Belajar', difficulty: 2,
+    kana: 'ユーチューブで にほんごを べんきょうします。ネイティブの はなしを きいて、シャドーイングを します。まいにち つづけています。',
+  },
+  {
+    id: 59, category: 'Keseharian', difficulty: 2,
+    kana: 'スマートウォッチで ほすうを はかります。いちまんぽ あるくと、おしらせが きます。けんこうの ために がんばります。',
+  },
+  {
+    id: 60, category: 'Percakapan', difficulty: 2,
+    kana: '「しゅうまつ、カラオケに いかない？」「いいね。なにを うたう？」「ボカロの きょくが うたいたい。」',
+  },
+  {
+    id: 61, category: 'Teknologi', difficulty: 2,
+    kana: 'パスワードを わすれました。リセットの メールが こないので、サポートに れんらくしました。へんじを まっています。',
+  },
+  {
+    id: 62, category: 'Olahraga & Kesehatan', difficulty: 2,
+    kana: 'ジムに かよいはじめました。トレーナーに メニューを つくって もらいました。きんにくが すこし つきました。',
+  },
+  {
+    id: 63, category: 'Traveling Modern', difficulty: 2,
+    kana: 'グーグルマップで みせを さがしました。レビューを よんで、いちばん ひょうかが いい みせに いきました。',
+  },
+  {
+    id: 64, category: 'Kantor & Bisnis', difficulty: 2,
+    kana: 'エクセルで ひょうを つくりました。グラフも つくりました。じょうしに ほめられました。うれしかったです。',
+  },
+  {
+    id: 65, category: 'Hobi Digital', difficulty: 2,
+    kana: 'スイッチで ゲームを します。オンラインで ともだちと あそびます。ボイスチャットを しながら たたかいます。',
+  },
+  {
+    id: 66, category: 'Anime & Manga', difficulty: 2,
+    kana: 'コミケに はじめて いきました。ひとが とても おおかったです。すきな サークルの ほんを かえました。たからものです。',
+  },
+  {
+    id: 67, category: 'Kuliner', difficulty: 2,
+    kana: 'スタバで しんさくのアイスを のみました。クリームが おおかったです。しゃしんを とって インスタに あげました。',
+  },
+  {
+    id: 68, category: 'Keseharian', difficulty: 2,
+    kana: 'アマゾンで ほんを かいました。 kindle で よみます。よる ねるまえに すこしずつ よみます。',
+  },
+  {
+    id: 69, category: 'Teknologi', difficulty: 3,
+    kana: 'チャットジーピーティーに レポートを てつだって もらいました。ぶんしょうを なおして もらいました。でも、じぶんで かくことが たいせつだと おもいました。',
+  },
+  {
+    id: 70, category: 'Anime & Manga', difficulty: 3,
+    kana: 'さいきんの アニメは エフェクトが すごいです。スタジオが じかんを かけて つくったことが わかります。ブルーレイを かって、なんかいも みています。',
+  },
+  {
+    id: 71, category: 'Traveling Modern', difficulty: 3,
+    kana: 'エルシーシーで ひこうきの チケットを かいました。よやくサイトで セールを みつけました。きゃりーばっぐだけで りょこうします。けいひを せつやくできました。',
+  },
+  {
+    id: 72, category: 'Kantor & Bisnis', difficulty: 3,
+    kana: 'スラックで プロジェクトの しんちょくを ほうこくしました。タスクを かんばんで かんりしています。しめきりに まにあうように がんばります。',
+  },
+  {
+    id: 73, category: 'Hobi Digital', difficulty: 3,
+    kana: 'ティックトックで ダンスどうがを とうこうしました。へんしゅうアプリで エフェクトを つけました。さいせいかいすうが きゅうに ふえました。',
+  },
+  {
+    id: 74, category: 'Musik & Streaming', difficulty: 3,
+    kana: 'ネットフリックスで ドラマを いっきみしました。ストーリーが おもしろくて、とまることが できませんでした。レビューを かこうと おもいます。',
+  },
+  {
+    id: 75, category: 'Kuliner', difficulty: 3,
+    kana: 'デリバリーアプリで タピオカミルクティーを たのみました。ポイントが たまっていたので、わりびきに なりました。チャイムが なって、すぐに とどきました。',
+  },
+  {
+    id: 76, category: 'Belajar', difficulty: 3,
+    kana: 'オンラインこうざで プログラミングを ならっています。パイソンの きそを べんきょうしました。エラーを なおすのが むずかしいですが、たのしいです。',
+  },
+  {
+    id: 77, category: 'Keseharian', difficulty: 3,
+    kana: 'スマートスピーカーに 「あしたの てんきは？」と ききました。へんじが かえってきました。アラームも セットして もらいました。べんりな じだいです。',
+  },
+  {
+    id: 78, category: 'Percakapan', difficulty: 3,
+    kana: '「この げんこう、チェックして もらえますか。」「いいですよ。ごじまで みておきます。」「ありがとうございます。たすかります。」',
+  },
+  {
+    id: 79, category: 'Olahraga & Kesehatan', difficulty: 3,
+    kana: 'ユーチューブの トレーニングどうがを みて、うちで うんどうしています。インストラクターが やさしく おしえてくれます。おかねも かかりません。',
+  },
+  {
+    id: 80, category: 'Teknologi', difficulty: 3,
+    kana: 'スマホの バッテリーが すぐに なくなります。せっていを みたら、アプリが バックグラウンドで うごいていました。オフに したら、よくなりました。',
+  },
+  {
+    id: 81, category: 'Anime & Manga', difficulty: 3,
+    kana: 'フィギュアを ネットオークションで かいました。げんていばんでした。はこを あけるとき、とても きんちょうしました。だいじに かざっています。',
+  },
+  {
+    id: 82, category: 'Traveling Modern', difficulty: 3,
+    kana: 'グーグルトランスレートで メニューを よみました。しゃしんで ほんやくできるので、とても べんりです。ちゅうもんを まちがえずに すみました。',
+  },
+  {
+    id: 83, category: 'Kantor & Bisnis', difficulty: 3,
+    kana: 'プレゼンの スライドを パワーポイントで つくりました。グラフと しゃしんを いれました。リハーサルを なんかいも しました。きんちょうします。',
+  },
+  {
+    id: 84, category: 'Hobi Digital', difficulty: 3,
+    kana: 'フォトショップで しゃしんを しゅうせいしました。めいどを あかるくして、いらない ものを けしました。プロみたいに なりました。',
+  },
+  {
+    id: 85, category: 'Kuliner', difficulty: 3,
+    kana: 'インスタで みた カフェに いきました。パンケーキが めいぶつです。クリームと イチゴが のっていました。ぎょうれつに ならびましたが、まんぞくです。',
+  },
+  {
+    id: 86, category: 'Belanja Online', difficulty: 3,
+    kana: 'メルカリで ふくを うりました。しゃしんを とって、せつめいを かきました。すぐに かいてが みつかりました。そうりょうも かんたんでした。',
+  },
+  {
+    id: 87, category: 'Keseharian', difficulty: 3,
+    kana: 'ラインで グループを つくりました。りょこうの けいかくを はなしています。カレンダーきのうで よていを あわせました。べんりです。',
+  },
+  {
+    id: 88, category: 'Percakapan', difficulty: 3,
+    kana: '「データの バックアップ、とりましたか。」「はい、クラウドに ほぞんしました。」「よかった。あんしんです。」',
+  },
+  {
+    id: 89, category: 'Teknologi', difficulty: 3,
+    kana: 'パソコンが とつぜん おそくなりました。さいきどうしたら、アップデートが はじまりました。じかんが かかりましたが、あたらしい きのうが つかえるように なりました。',
+  },
+  {
+    id: 90, category: 'Musik & Streaming', difficulty: 3,
+    kana: 'カラオケアプリで うたを ろくおんしました。エコーを かけて、ミックスしました。エスエヌエスに シェアしたら、ともだちが ほめてくれました。',
+  },
+  {
+    id: 91, category: 'Traveling Modern', difficulty: 3,
+    kana: 'ホテルを チェックアウトして、スーツケースを あずけました。チェックインまで じかんが あるので、まちを さんぽします。カフェで じかんを つぶします。',
+  },
+  {
+    id: 92, category: 'Kantor & Bisnis', difficulty: 3,
+    kana: 'オンラインめんせつを うけました。カメラと マイクを テストしました。きんちょうしましたが、しつもんに ちゃんと こたえられました。',
+  },
+  {
+    id: 93, category: 'Hobi Digital', difficulty: 3,
+    kana: 'マインクラフトで いえを たてました。ともだちと マルチプレイで あそびました。よるに ゾンビが きて、びっくりしました。',
+  },
+  {
+    id: 94, category: 'Kuliner', difficulty: 3,
+    kana: 'コンビニの しんしょうひんの グミを かいました。パッケージが かわいいです。ソーダあじで、とても おいしいです。リピートしたいです。',
+  },
+  {
+    id: 95, category: 'Belajar', difficulty: 3,
+    kana: 'ズームで にほんごの じゅぎょうを うけています。ブレイクアウトルームで グループワークを します。チャットで しつもんも できます。べんりです。',
+  },
+  {
+    id: 96, category: 'Olahraga & Kesehatan', difficulty: 3,
+    kana: 'ヘルスケアアプリで すいみんじかんを きろくしています。グラフを みると、へいきんが わかります。はやく ねるように しています。',
+  },
+  {
+    id: 97, category: 'Percakapan', difficulty: 3,
+    kana: '「この しりょう、ピー ディー エフで おくって ください。」「わかりました。メールで そうしんします。」「おねがいします。」',
+  },
+  {
+    id: 98, category: 'Cerita pendek', difficulty: 3,
+    kana: 'きんようの よる、オンラインゲームの イベントに さんかしました。チームで きょうりょくして、ボスを たおしました。ボイスチャットで おおさわぎしました。',
+  },
+  {
+    id: 99, category: 'Keseharian', difficulty: 3,
+    kana: 'でんきやで エアコンを かいました。ネットで くちこみを しらべました。こうにゅうレビューが さんこうに なりました。とりつけを よやくしました。',
+  },
+  {
+    id: 100, category: 'Rencana & Liburan', difficulty: 3,
+    kana: 'らいげつの れんきゅうに おきなわへ いきます。エアビーで コテージを かりました。シュノーケリングを したいです。いまから ワクワクしています。',
+  },
 ]

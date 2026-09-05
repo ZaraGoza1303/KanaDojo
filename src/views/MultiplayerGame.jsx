@@ -1,8 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Card, Button, Badge, ProgressBar } from '../components/ui.jsx'
 import { shuffleWithSeed } from '../lib/seedRandom.js'
-import { HIRAGANA_BASE, KATAKANA_BASE } from '../data/kana.js'
-import { EXTENDED_KANA, YOON_KANA, LOANWORDS } from '../data/extended.js'
+import {
+  HIRAGANA_BASE, HIRAGANA_DAKUTEN,
+  KATAKANA_BASE, KATAKANA_DAKUTEN,
+} from '../data/kana.js'
+import { EXTENDED_KANA, YOON_KANA } from '../data/extended.js'
 import { TEXTS } from '../data/texts.js'
 import { accuracy as calcAccuracy, kanaTextToRomaji } from '../lib/romaji.js'
 import { comboMultiplier } from '../lib/progress.js'
@@ -17,7 +20,7 @@ const SINGLE_LETTERS = [
   ...EXTENDED_KANA.map((e) => [e.kana, e.romaji, null]),
   ...YOON_KANA.map(([k, r]) => [k, r, null]),
 ]
-const WORDS = LOANWORDS.map((w) => [w.kana, w.romaji, w.arti, w.combo])
+const COMBO_LETTERS = SINGLE_LETTERS
 
 function getChallengeSeconds(mode) {
   if (mode === 'combo') return CHALLENGE_SECONDS_COMBO
@@ -31,18 +34,18 @@ export default function MultiplayerGame({ config, progress, onExit, multiplayer 
   const mode = config?.mode ?? config?.settings?.mode ?? 'quiz'
   const length = config?.length ?? config?.settings?.length ?? 20
   const challenge = config?.challenge ?? config?.settings?.challenge ?? false
+  const dakuten = config?.dakuten ?? config?.settings?.dakuten ?? false
   const total = length === 0 ? Infinity : length
   const challengeSeconds = getChallengeSeconds(mode)
 
   const quizPool = useMemo(() => {
-    const base = [...HIRAGANA_BASE, ...KATAKANA_BASE]
+    const base = dakuten
+      ? [...HIRAGANA_BASE, ...HIRAGANA_DAKUTEN, ...KATAKANA_BASE, ...KATAKANA_DAKUTEN]
+      : [...HIRAGANA_BASE, ...KATAKANA_BASE]
     return shuffleWithSeed(base, seed)
-  }, [seed])
+  }, [seed, dakuten])
 
-  const comboPool = useMemo(() => {
-    const base = [...SINGLE_LETTERS, ...WORDS]
-    return shuffleWithSeed(base, seed + ':combo')
-  }, [seed])
+  const comboPool = useMemo(() => shuffleWithSeed(COMBO_LETTERS, seed + ':combo'), [seed])
 
   const translateIndices = useMemo(() => {
     const arr = TEXTS.map((_, i) => i)
@@ -55,10 +58,14 @@ export default function MultiplayerGame({ config, progress, onExit, multiplayer 
       return TEXTS[tIdx]
     }
     if (mode === 'combo') {
-      return comboPool[idx % comboPool.length]
+      // Tanpa pengulangan: satu putaran penuh pool, lalu acak ulang secara
+      // deterministik (seed + putaran) supaya kedua pemain tetap sinkron.
+      const cycle = Math.floor(idx / comboPool.length)
+      const pool = cycle === 0 ? comboPool : shuffleWithSeed(COMBO_LETTERS, seed + ':combo:' + cycle)
+      return pool[idx % pool.length]
     }
     return quizPool[idx % quizPool.length]
-  }, [mode, quizPool, comboPool, translateIndices])
+  }, [mode, quizPool, comboPool, translateIndices, seed])
 
   const getExpectedRomaji = useCallback((entry) => {
     if (!entry) return ''
@@ -145,6 +152,7 @@ export default function MultiplayerGame({ config, progress, onExit, multiplayer 
       multiplayer.onData(handleData)
     } else if (typeof multiplayer.setOnData === 'function') {
       multiplayer.setOnData(handleData)
+      multiplayer.setOnPeerLeave?.(handleLeave)
     } else if (multiplayer.getPeer) {
       try {
         const peer = multiplayer.getPeer()
@@ -391,7 +399,7 @@ export default function MultiplayerGame({ config, progress, onExit, multiplayer 
         )}
         <div className="flex justify-center gap-3">
           <Button variant="ghost" onClick={onExit}>Kembali</Button>
-          <Button onClick={() => { playClick(); setIdx(0); answeredRef.current = 0; setAnswered(0); setCorrectCount(0); setCombo(0); setBestCombo(0); setXpEarned(0); setMistakes([]); setAnswer(''); setFeedback(null); setHintReveal(0); setHintUsed(false); setTimeLeft(challengeSeconds); setPhase('play'); setTimeout(() => inputRef.current?.focus(), 50) }}>Main Lagi</Button>
+          <Button onClick={() => { playClick(); setIdx(0); answeredRef.current = 0; setAnswered(0); setCorrectCount(0); setCombo(0); setBestCombo(0); setXpEarned(0); setMistakes([]); setAnswer(''); setFeedback(null); setHintReveal(0); setHintUsed(false); setTimeLeft(challengeSeconds); setOpponent({ answered: 0, correct: 0, accuracy: 0, connected: true }); setDisconnected(false); setPhase('play'); setTimeout(() => inputRef.current?.focus(), 50) }}>Main Lagi</Button>
         </div>
       </div>
     )

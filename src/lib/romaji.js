@@ -284,6 +284,246 @@ export function diffChars(userAnswer, expected) {
   return result
 }
 
+/** Tokenisasi teks kana per kata, dipertahankan kana-nya untuk highlight. */
+export function kanaTextToWordSegments(text) {
+  return text
+    .replace(/[、。！？「」…・,.!?]/g, ' ')
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((token) => ({ kana: token, romaji: convertToken(token) }))
+}
+
+/**
+ * Versi kanaTokenToRomaji yang mencatat indeks kana pemilik setiap huruf
+ * output — dipakai untuk highlight kana per huruf.
+ */
+function traceKanaToken(token) {
+  const out = []
+  const owners = []
+  const push = (s, owner) => {
+    for (const ch of s) {
+      out.push(ch)
+      owners.push(owner)
+    }
+  }
+  let i = 0
+  while (i < token.length) {
+    const ch = token[i]
+    if (ch === 'っ' || ch === 'ッ') {
+      const next = token[i + 1]
+      const nextR = next ? BASE_MAP.get(next) : null
+      if (nextR) push(nextR.startsWith('ch') ? 't' : nextR[0], i)
+      i += 1
+      continue
+    }
+    if (ch === 'ー' || ch === '〜') {
+      const lastVowel = [...out].reverse().find((c) => VOWELS.includes(c))
+      if (lastVowel) push(lastVowel, i)
+      i += 1
+      continue
+    }
+    const two = token.slice(i, i + 2)
+    if (COMBO_MAP.has(two)) {
+      push(COMBO_MAP.get(two), i)
+      i += 2
+      continue
+    }
+    if (SMALL_Y[ch]) {
+      const yfull = SMALL_Y[ch]
+      const base = BASE_MAP.get(token[i - 1])
+      if (base && base.length > 1) {
+        const stem = base.slice(0, -1)
+        const needsVowel = stem === 'sh' || stem === 'ch' || stem === 'j'
+        out.splice(out.length - base.length, base.length)
+        owners.splice(owners.length - base.length, base.length)
+        push(needsVowel ? stem + yfull[1] : stem + yfull, i)
+      } else {
+        push(yfull, i)
+      }
+      i += 1
+      continue
+    }
+    const r = BASE_MAP.get(ch)
+    if (r) push(r, i)
+    i += 1
+  }
+  return { romaji: out.join(''), owners }
+}
+
+/**
+ * Diff jawaban user terhadap jawaban yang dipecah per-kata kana.
+ * Perbandingan karakter tetap memakai romaji utuh ternormalisasi (sama dengan
+ * yang dipakai penilaian), lalu setiap karakter dipetakan ke kata kana-nya
+ * lewat penyelarasan LCS antara gabungan per-kata vs romaji utuh — karena
+ * normalisasi bisa menyatukan vokal antar kata (…no + ongaku… → …no…).
+ * Mengembalikan { wordStatus, charDiff, kanaCharStatus }:
+ * - wordStatus[wi]     : 'ok' | 'wrong' untuk tiap kata
+ * - charDiff[]         : { char, type, word } untuk highlight romaji
+ * - kanaCharStatus[wi] : ('ok'|'wrong')[] per huruf kana dalam kata wi
+ */
+export function diffAnswerWords(userAnswer, wordSegments) {
+  const un = normalizeAnswer(userAnswer)
+  const full = normalizeAnswer(wordSegments.map((w) => w.romaji).join(' '))
+  const parts = wordSegments.map((w) => normalizeAnswer(w.romaji))
+  const concat = parts.join('')
+  const wordStatus = parts.map(() => 'ok')
+  const lastWord = Math.max(0, parts.length - 1)
+
+  // Peta posisi concat → indeks kata
+  const bounds = []
+  let acc = 0
+  for (const p of parts) {
+    bounds.push([acc, acc + p.length])
+    acc += p.length
+  }
+  let wi = 0
+  const wordOfConcat = (pos) => {
+    while (wi < bounds.length - 1 && pos >= bounds[wi][1]) wi++
+    return wi
+  }
+
+  // Selaraskan concat dengan full (hanya expected, statis per teks):
+  // karakter concat yang hilang karena normalisasi antar-kata dilewati.
+  const m = concat.length
+  const n = full.length
+  const wordForFull = new Array(n).fill(lastWord)
+  if (n > 0) {
+    const dp = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0))
+    for (let a = m - 1; a >= 0; a--) {
+      for (let b = n - 1; b >= 0; b--) {
+        dp[a][b] = concat[a] === full[b] ? dp[a + 1][b + 1] + 1 : Math.max(dp[a + 1][b], dp[a][b + 1])
+      }
+    }
+    let a = 0
+    let b = 0
+    while (a < m && b < n) {
+      if (concat[a] === full[b]) {
+        wordForFull[b] = wordOfConcat(a)
+        a++
+        b++
+      } else if (dp[a + 1][b] >= dp[a][b + 1]) {
+        a++
+      } else {
+        wordForFull[b] = wordOfConcat(a)
+        b++
+      }
+    }
+    while (b < n) {
+      wordForFull[b] = wordOfConcat(m)
+      b++
+    }
+  }
+
+  // Diff user vs full, atribusikan tiap karakter ke kata kana-nya
+  const charDiff = []
+  if (n === 0) {
+    for (let x = 0; x < un.length; x++) charDiff.push({ char: un[x], type: 'extra', word: 0 })
+    if (wordStatus.length > 0 && un.length > 0) wordStatus[0] = 'wrong'
+    return { wordStatus, charDiff }
+  }
+
+  const dp = Array.from({ length: un.length + 1 }, () => new Array(n + 1).fill(0))
+  for (let x = un.length - 1; x >= 0; x--) {
+    for (let y = n - 1; y >= 0; y--) {
+      dp[x][y] = un[x] === full[y] ? dp[x + 1][y + 1] + 1 : Math.max(dp[x + 1][y], dp[x][y + 1])
+    }
+  }
+  let x = 0
+  let y = 0
+  while (x < un.length && y < n) {
+    if (un[x] === full[y]) {
+      charDiff.push({ char: full[y], type: 'ok', word: wordForFull[y] })
+      x++
+      y++
+    } else if (dp[x + 1][y] >= dp[x][y + 1]) {
+      const w = wordForFull[Math.min(y, n - 1)]
+      charDiff.push({ char: un[x], type: 'extra', word: w })
+      if (wordStatus[w] != null) wordStatus[w] = 'wrong'
+      x++
+    } else {
+      charDiff.push({ char: full[y], type: 'wrong', word: wordForFull[y] })
+      wordStatus[wordForFull[y]] = 'wrong'
+      y++
+    }
+  }
+  while (x < un.length) {
+    charDiff.push({ char: un[x], type: 'extra', word: lastWord })
+    if (wordStatus[lastWord] != null) wordStatus[lastWord] = 'wrong'
+    x++
+  }
+  while (y < n) {
+    charDiff.push({ char: full[y], type: 'wrong', word: wordForFull[y] })
+    wordStatus[wordForFull[y]] = 'wrong'
+    y++
+  }
+
+  // Status per huruf kana: selaraskan romaji mentah tiap kata (dengan jejak
+  // pemiliknya) ke romaji ternormalisasi kata tersebut.
+  const kanaCharStatus = wordSegments.map((seg, wi) => [...seg.kana].map(() => 'ok'))
+  for (let wi = 0; wi < wordSegments.length; wi++) {
+    try {
+      const seg = wordSegments[wi]
+      const { romaji: R, owners } = traceKanaToken(seg.kana)
+      const We = parts[wi]
+      const n2 = We.length
+      const m2 = R.length
+      const ownerForWe = new Array(n2).fill(-1)
+      const coverage = new Array(seg.kana.length).fill(0)
+      if (n2 > 0 && m2 > 0) {
+        const dp2 = Array.from({ length: m2 + 1 }, () => new Array(n2 + 1).fill(0))
+        for (let a = m2 - 1; a >= 0; a--) {
+          for (let b = n2 - 1; b >= 0; b--) {
+            dp2[a][b] = R[a] === We[b] ? dp2[a + 1][b + 1] + 1 : Math.max(dp2[a + 1][b], dp2[a][b + 1])
+          }
+        }
+        let a = 0
+        let b = 0
+        while (a < m2 && b < n2) {
+          if (R[a] === We[b]) {
+            ownerForWe[b] = owners[a]
+            coverage[owners[a]] += 1
+            a++
+            b++
+          } else if (dp2[a + 1][b] >= dp2[a][b + 1]) {
+            a++
+          } else {
+            b++
+          }
+        }
+        // huruf We yang tak ketemu pasangannya (substitusi penuh, mis. fu→hu)
+        // mewarisi pemilik dari tetangga terdekat
+        for (let b = 0; b < n2; b++) {
+          if (ownerForWe[b] === -1) {
+            ownerForWe[b] = ownerForWe[b - 1] ?? ownerForWe.slice(b).find((v) => v !== -1) ?? 0
+          }
+        }
+      }
+      // Tandai dari diff: 'wrong' dan 'extra' menyalahkan kana pemiliknya
+      let j = 0
+      for (const e of charDiff) {
+        if (e.word !== wi) continue
+        if (e.type === 'extra') {
+          const idx = ownerForWe[Math.min(j, n2 - 1)]
+          if (idx >= 0) kanaCharStatus[wi][idx] = 'wrong'
+        } else {
+          if (e.type === 'wrong' && ownerForWe[j] >= 0) kanaCharStatus[wi][ownerForWe[j]] = 'wrong'
+          j++
+        }
+      }
+      // Kana tanpa kontribusi romaji (ー tanpa vokal, dsb.) ikut tetangganya
+      for (let k = 1; k < kanaCharStatus[wi].length; k++) {
+        if (coverage[k] === 0) kanaCharStatus[wi][k] = kanaCharStatus[wi][k - 1]
+      }
+      for (let k = kanaCharStatus[wi].length - 2; k >= 0; k--) {
+        if (coverage[k] === 0) kanaCharStatus[wi][k] = kanaCharStatus[wi][k + 1]
+      }
+    } catch {
+      kanaCharStatus[wi] = [...wordSegments[wi].kana].map(() => wordStatus[wi])
+    }
+  }
+  return { wordStatus, charDiff, kanaCharStatus }
+}
+
 /** Kumpulkan semua kana unik yang muncul dalam sebuah teks (untuk mastery). */
 export function extractKana(text) {
   const found = []

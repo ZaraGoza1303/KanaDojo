@@ -5,15 +5,25 @@ import Home from './views/Home.jsx'
 import TranslateMode from './views/TranslateMode.jsx'
 import QuizMode from './views/QuizMode.jsx'
 import ComboMode from './views/ComboMode.jsx'
-import AnkiMode from './views/AnkiMode.jsx'
+import VocabHub from './views/VocabHub.jsx'
 import Lobby from './views/Lobby.jsx'
 
+const APP_VIEW_KEY='kd-app-view'
 export default function App() {
-  const [view, setView] = useState('home')
+  const [view, setView] = useState(()=>{
+    try{
+      const params=new URLSearchParams(window.location.search)
+      if(params.get('room')) return 'lobby'
+      const v=localStorage.getItem(APP_VIEW_KEY)
+      if(v && ['translate','quiz','combo','vocab','lobby','multiplayer'].includes(v)) return v
+    }catch{}
+    return 'home'
+  })
   const [multiplayerConfig, setMultiplayerConfig] = useState(null)
   const [initialRoomCode, setInitialRoomCode] = useState(null)
   const progress = useProgress()
-  const goHome = () => setView('home')
+  const goHome = () => { try{localStorage.removeItem(APP_VIEW_KEY)}catch{}; try{localStorage.removeItem('kd-vocab-hub-mode')}catch{}; setView('home') }
+  useEffect(()=>{ try{ if(view==='home') localStorage.removeItem(APP_VIEW_KEY); else localStorage.setItem(APP_VIEW_KEY, view)}catch{} },[view])
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -60,7 +70,7 @@ export default function App() {
         {view === 'translate' && <TranslateMode progress={progress} onExit={goHome} />}
         {view === 'quiz' && <QuizMode progress={progress} onExit={goHome} />}
         {view === 'combo' && <ComboMode progress={progress} onExit={goHome} />}
-        {view === 'anki' && <AnkiMode progress={progress} onExit={goHome} />}
+        {view === 'vocab' && <VocabHub progress={progress} onExit={goHome} />}
         {view === 'lobby' && <Lobby onStartGame={handleStartGame} onBack={goHome} initialRoomCode={initialRoomCode} />}
         {view === 'multiplayer' && (
           <div className="mx-auto max-w-xl space-y-4 text-center">
