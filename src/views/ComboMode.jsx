@@ -25,6 +25,7 @@ export default function ComboMode({ progress, onExit }) {
   const [length, setLength] = useState(_c?.length ?? 30)
   const [challenge, setChallenge] = useState(_c?.challenge || false)
 
+  const [dakuten, setDakuten] = useState(_c?.dakuten || false)
   const [current, setCurrent] = useState(_c?.current || null)
   const [answer, setAnswer] = useState('')
   const [feedback, setFeedback] = useState(null)
@@ -45,10 +46,16 @@ export default function ComboMode({ progress, onExit }) {
   const inputRef = useRef(null)
 
   const pool = useCallback(() => {
-    if (subMode === 'letters') return LETTERS
-    if (subMode === 'words') return WORDS
-    return [...LETTERS, ...WORDS]
-  }, [subMode])
+    let list
+    if (subMode === 'letters') list = LETTERS
+    else if (subMode === 'words') list = WORDS
+    else list = [...LETTERS, ...WORDS]
+    if(!dakuten){
+      const re=/[がぎぐげござじずぜぞだぢづでどばびぶべぼぱぴぷぺぽガギグゲゴザジズゼゾダヂヅデドバビブベボパピプペポヴぎゃぎゅぎょじゃじゅじょびゃびゅびょぴゃぴゅぴょギャギュギョジャジュジョビャビュビョピャピュピョ]/
+      list = list.filter(([k])=> !re.test(k))
+    }
+    return list
+  }, [subMode, dakuten])
 
   const pickNext = useCallback(
     (prevKana) => {
@@ -142,7 +149,7 @@ export default function ComboMode({ progress, onExit }) {
     const t = setTimeout(() => setTimeLeft((s) => s - 1), 1000)
     return () => clearTimeout(t)
   }, [phase, challenge, timeLeft, feedback])
-  useEffect(()=>{ if(phase==='play'){ try{localStorage.setItem(COMBO_KEY, JSON.stringify({phase, subMode, length, challenge, current, answered, correctCount, combo, bestCombo, mistakes, pendingWrong, queue, queuePos, xpEarned}))}catch{} } else { try{localStorage.removeItem(COMBO_KEY)}catch{} } },[phase, subMode, length, challenge, current, answered, correctCount, combo, bestCombo, mistakes, pendingWrong, queue, queuePos, xpEarned])
+  useEffect(()=>{ if(phase==='play'){ try{localStorage.setItem(COMBO_KEY, JSON.stringify({phase, subMode, length, challenge, dakuten, current, answered, correctCount, combo, bestCombo, mistakes, pendingWrong, queue, queuePos, xpEarned}))}catch{} } else { try{localStorage.removeItem(COMBO_KEY)}catch{} } },[phase, subMode, length, challenge, dakuten, current, answered, correctCount, combo, bestCombo, mistakes, pendingWrong, queue, queuePos, xpEarned])
 
   const next = (fromSubmit = false) => {
     if (!fromSubmit) {
@@ -299,6 +306,10 @@ export default function ComboMode({ progress, onExit }) {
             />
           </div>
 
+          <label className="flex cursor-pointer items-center gap-3 text-sm text-slate-900 dark:text-zinc-200">
+            <input type="checkbox" checked={dakuten} onChange={(e) => setDakuten(e.target.checked)} className="h-4 w-4 accent-zinc-900" />
+            <span>Sertakan dakuten/handakuten <span className="text-slate-600 dark:text-zinc-400">(が, ぱ, ぎゃ...)</span></span>
+          </label>
           <label className="flex cursor-pointer items-center gap-3 text-sm text-slate-900 dark:text-zinc-200">
             <input type="checkbox" checked={challenge} onChange={(e) => setChallenge(e.target.checked)} className="h-4 w-4 accent-zinc-900" />
             <span>Challenge Mode <span className="text-slate-600 dark:text-zinc-400"> {CHALLENGE_SECONDS} detik per soal, XP x1,5</span></span>
