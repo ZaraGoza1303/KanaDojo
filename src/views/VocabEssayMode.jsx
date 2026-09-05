@@ -1,12 +1,37 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import { VOCAB } from '../data/vocab.js'
-import { kanaTextToRomaji, extractKana } from '../lib/romaji.js'
+import { kanaTextToRomaji, extractKana, levenshtein } from '../lib/romaji.js'
 import { Card, Button, Badge } from '../components/ui.jsx'
 
 function shuffle(a){ const b=[...a]; for(let i=b.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [b[i],b[j]]=[b[j],b[i]] } return b }
 const ES_KEY='kd-vocab-essay-state'
-const loadES=()=>{ try{ const j=JSON.parse(localStorage.getItem(ES_KEY)); if(j&&j.queue) return j }catch{} return null }
+const byId=(id)=> VOCAB.find(v=>v.id===id)
+// Simpan sesi sebagai ID soal (bukan objek) supaya tidak pernah memuat
+// salinan vocab lama dari localStorage yang field-nya sudah basi
+const loadES=()=>{
+  try{
+    const j=JSON.parse(localStorage.getItem(ES_KEY))
+    if(!j) return null
+    const ids=j.ids || (j.queue||[]).map(q=>q.id)
+    const queue=ids.map(byId).filter(Boolean)
+    if(!queue.length) return null
+    return { queue, pos: j.pos||0, wrong: (j.wrongIds||[]).map(byId).filter(Boolean), input: j.input||'', feedback: j.feedback||null, stats: j.stats||{total:0,correct:0,xp:0}, done: !!j.done }
+  }catch{}
+  return null
+}
 function norm(s){ return s.trim().toLowerCase().replace(/\s+/g,' ') }
+// urutan kata tidak peduli: "pulang selamat datang" == "selamat datang pulang"
+function tok(s){ return norm(s).replace(/[-']/g,' ').split(/\s+/).filter(Boolean).sort().join(' ') }
+// ---- penilaian fleksibel untuk terjemahan bebas ----
+const STOP = new Set(['dari','ke','di','yang','untuk','dengan','pada','dalam','itu','ini','juga','sekali','banget','sangat','akan','sudah','belum','oleh','atau','dan','adalah','merupakan','bisa','dapat'])
+const words = (s) => norm(s).replace(/[-']/g,' ').split(/\s+/).filter(Boolean)
+const keyWords = (s) => words(s).filter(w => !STOP.has(w))
+// kata dianggap sama bila identik atau typo ringan (levenshtein kecil)
+const wordEq = (a, b) => {
+  if (a === b) return true
+  const L = Math.max(a.length, b.length)
+  return L >= 6 ? levenshtein(a, b) <= 2 : L >= 4 ? levenshtein(a, b) <= 1 : false
+}
 
 export default function VocabEssayMode({ progress, onExit }){
   const _s=loadES()
@@ -24,21 +49,29 @@ export default function VocabEssayMode({ progress, onExit }){
   const current = queue[pos]
   const romaji = current ? kanaTextToRomaji(current.kana) : ''
 
-  useEffect(()=>{ try{localStorage.setItem(ES_KEY, JSON.stringify({queue,pos,wrong,input,feedback,stats,done}))}catch{} },[queue,pos,wrong,input,feedback,stats,done])
-  useEffect(()=>{
-    if(!feedback) return
-    const h=(e)=>{ if(e.key==='Enter'){ e.preventDefault(); next() } }
-    window.addEventListener('keydown', h)
-    return ()=> window.removeEventListener('keydown', h)
-  },[feedback, next])
+  useEffect(()=>{ try{localStorage.setItem(ES_KEY, JSON.stringify({ids: queue.map(q=>q.id), pos, wrongIds: wrong.map(w=>w.id), input, feedback, stats, done}))}catch{} },[queue,pos,wrong,input,feedback,stats,done])
 
   const submit = useCallback(()=>{
     if(!current || !input.trim() || feedback) return
     const n = norm(input)
+    const t = tok(input)
     const cands = [current.arti, ...(current.alt||[])].map(norm)
-    let ok = cands.includes(n)
+    const inWords = keyWords(input)
+    let ok = cands.some(c => c === n || tok(c) === t)
     if(!ok){
-      for(const c of cands){ if(c.length>=4 && n.length>=4 && (c.includes(n) || n.includes(c))) { ok=true; break } }
+      for(const c of cands){
+        // aturan lama: jawaban berada di dalam kandidat atau sebaliknya
+        if(c.length>=4 && n.length>=4 && (c.includes(n) || n.includes(c))) { ok=true; break }
+        // fleksibel: bandingkan kata-kata inti (abaikan stopword, toleran typo,
+        // terima kata tambahan seperti "selamat kembali dari mana")
+        const cWords = keyWords(c)
+        if(!inWords.length || !cWords.length) continue
+        const eq = inWords.length === cWords.length && inWords.every(w => cWords.some(cw => wordEq(w, cw)))
+        if(eq) { ok=true; break }
+        const [small, big] = inWords.length <= cWords.length ? [inWords, cWords] : [cWords, inWords]
+        const matched = small.filter(w => big.some(bw => wordEq(w, bw))).length
+        if(matched === small.length && matched >= Math.max(1, Math.ceil(big.length * 0.5))) { ok=true; break }
+      }
     }
     setFeedback(ok ? 'correct' : 'wrong')
     if(ok) uniqCorrectRef.current.add(current.id)
@@ -72,6 +105,13 @@ export default function VocabEssayMode({ progress, onExit }){
       setFeedback(null)
     }
   },[pos,queue.length,wrong])
+
+  useEffect(()=>{
+    if(!feedback) return
+    const h=(e)=>{ if(e.key==='Enter'){ e.preventDefault(); next() } }
+    window.addEventListener('keydown', h)
+    return ()=> window.removeEventListener('keydown', h)
+  },[feedback, next])
 
   const handleExit = useCallback(()=>{
     try{localStorage.removeItem(ES_KEY)}catch{}
@@ -129,7 +169,7 @@ export default function VocabEssayMode({ progress, onExit }){
           </div>
         ) : (
           <div className="mt-3 text-center space-y-2">
-            <p className={`text-sm font-bold ${feedback==='correct' ? 'text-emerald-700' : 'text-red-600'}`}>{feedback==='correct' ? 'Benar! 🎉' : `Salah — jawaban: ${current.arti}`}</p>
+            <p className={`text-sm font-bold ${feedback==='correct' ? 'text-emerald-700' : 'text-red-600'}`}>{feedback==='correct' ? 'Benar! 🎉' : `Salah — jawaban: ${current.arti}${current.alt?.length ? ' (juga: ' + current.alt.join(' / ') + ')' : ''}`}</p>
             <div className="flex justify-center gap-2">
               <Button onClick={next}>{pos>=queue.length-1 && wrong.length>0 ? 'Ulangi yang salah →' : pos>=queue.length-1 ? 'Selesai →' : 'Lanjut →'}</Button>
             </div>

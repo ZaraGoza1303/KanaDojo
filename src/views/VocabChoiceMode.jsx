@@ -5,7 +5,19 @@ import { Card, Button, Badge } from '../components/ui.jsx'
 
 function shuffle(a){ const b=[...a]; for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]]} return b }
 const VC_KEY='kd-vocab-choice-state'
-const loadVC=()=>{try{const j=JSON.parse(localStorage.getItem(VC_KEY)); if(j&&j.queue&&j.queue.length) return j}catch{} return null}
+const byId=(id)=> VOCAB.find(v=>v.id===id)
+// Simpan sesi sebagai ID supaya tidak memuat salinan vocab lama dari localStorage
+const loadVC=()=>{
+  try{
+    const j=JSON.parse(localStorage.getItem(VC_KEY))
+    if(!j) return null
+    const ids=j.ids || (j.queue||[]).map(q=>q.id)
+    const queue=ids.map(byId).filter(Boolean)
+    if(!queue.length) return null
+    return { queue, pos: j.pos||0, wrong: (j.wrongIds||[]).map(byId).filter(Boolean), picked: j.picked||null, stats: j.stats||{total:0,correct:0,xp:0}, done: !!j.done }
+  }catch{}
+  return null
+}
 
 export default function VocabChoiceMode({ progress, onExit }){
   const _vc=loadVC()
@@ -62,7 +74,7 @@ export default function VocabChoiceMode({ progress, onExit }){
     }
   },[pos, queue.length, wrong])
 
-  useEffect(()=>{ try{localStorage.setItem(VC_KEY, JSON.stringify({queue,pos,wrong,picked,stats,done}))}catch{} },[queue,pos,wrong,picked,stats,done])
+  useEffect(()=>{ try{localStorage.setItem(VC_KEY, JSON.stringify({ids: queue.map(q=>q.id), pos, wrongIds: wrong.map(w=>w.id), picked, stats, done}))}catch{} },[queue,pos,wrong,picked,stats,done])
   const handleExit = useCallback(()=>{
     try{localStorage.removeItem(VC_KEY)}catch{}
     if(stats.total>0){
