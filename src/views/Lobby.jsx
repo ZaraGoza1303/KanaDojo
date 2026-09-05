@@ -77,12 +77,21 @@ export default function Lobby({ onStartGame, onBack, initialRoomCode }) {
       onPeerJoin: () => { setJoinStatus('connected'); setJoinError('') },
       onPeerLeave: () => setJoinStatus((s)=> s==='connected' ? 'idle':'error'),
       onError: (err) => {
-        if(err?.type==='peer-unavailable'){
+        const t=err?.type||'unknown'
+        const msg=err?.message||JSON.stringify(err).slice(0,120)
+        console.error('peer error',t,msg,err)
+        if(t==='peer-unavailable'){
           setJoinStatus('error')
-          setJoinError(`Room ${code} tidak ditemukan — host mungkin belum buat room atau sudah keluar. Coba host buat ulang.`)
-        } else if(err?.type==='network' || err?.type==='server-error'){
+          setJoinError(`Room ${code} tidak ditemukan (${t}). Host belum open.`)
+        } else if(t==='network' || t==='server-error' || t==='socket-error' || t==='socket-closed'){
           setJoinStatus('error')
-          setJoinError('Gagal konek ke server PeerJS. Cek internet / coba HTTPS.')
+          setJoinError(`Peer server error (${t}: ${msg}). Coba refresh & buat ulang.`)
+        } else if(t==='webrtc'){
+          setJoinStatus('error')
+          setJoinError(`WebRTC gagal (${msg}). Cek firewall / coba jaringan lain.`)
+        } else if(t!=='unavailable-id'){
+          setJoinStatus('error')
+          setJoinError(`Error ${t}: ${msg}`)
         }
       }
     })

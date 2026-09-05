@@ -18,7 +18,8 @@ export function createMultiplayer({ onData, onPeerJoin, onPeerLeave, onError } =
     conn = c
     c.on('data', d => dataHandler?.(d))
     c.on('close', () => { cleanup(); leaveHandler?.(c) })
-    c.on('error', () => { cleanup(); leaveHandler?.(c) })
+    c.on('error', (e) => { console.error('conn error',e); cleanup(); leaveHandler?.(c); errorHandler?.({type:'webrtc', message:String(e?.message||e)}) })
+    c.on('iceStateChanged', s=> console.log('ice',s))
     onPeerJoin?.(c)
   }
   const PEER_CFG={ host:'0.peerjs.com', port:443, path:'/', secure:true, debug:1, config:{ iceServers:[
