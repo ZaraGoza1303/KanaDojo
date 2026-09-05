@@ -16,26 +16,26 @@ export default function Home({ progress, onNavigate }) {
   const visibleModes = MODES.filter((m) => m.id !== 'lobby')
   const maxDayXp = Math.max(10, ...progress.last7.map((d) => d.xp))
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 sm:space-y-8">
       <section className="animate-rise">
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-3xl">
+            <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-3xl">
               Selamat datang siap latihan hari ini?
             </h1>
             <p className="mt-2 max-w-2xl text-sm text-slate-600 dark:text-zinc-400 sm:text-base">
               Kuasai membaca hiragana & katakana lewat latihan terstruktur.
             </p>
           </div>
-          <Button onClick={() => onNavigate('lobby')} className="shrink-0 rounded-xl bg-zinc-900 px-5 py-3 text-sm font-bold text-white shadow-md hover:bg-black dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-100">
+          <Button onClick={() => onNavigate('lobby')} className="w-full sm:w-auto shrink-0 rounded-xl bg-zinc-900 px-5 py-3 text-sm font-bold text-white shadow-md hover:bg-black dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-100">
             Multiplayer →
           </Button>
         </div>
       </section>
 
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <section className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         {visibleModes.map((m, i) => (
-          <button key={m.id} onClick={() => onNavigate(m.id)} style={{ animationDelay: `${i * 70}ms` }} className="animate-rise rounded-2xl border border-slate-200 bg-white p-5 text-left shadow-sm transition hover:border-slate-300 hover:shadow-md dark:border-zinc-700 dark:bg-zinc-800 dark:hover:border-zinc-600">
+          <button key={m.id} onClick={() => onNavigate(m.id)} style={{ animationDelay: `${i * 70}ms` }} className="animate-rise rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 text-left shadow-sm transition hover:border-slate-300 hover:shadow-md dark:border-zinc-700 dark:bg-zinc-800 dark:hover:border-zinc-600">
             <h2 className="font-semibold text-slate-900 dark:text-white">{m.title}</h2>
             <p className="mt-1 text-xs leading-relaxed text-slate-600 dark:text-zinc-400">{m.desc}</p>
             <div className="mt-3 flex flex-wrap gap-1.5">
@@ -48,7 +48,7 @@ export default function Home({ progress, onNavigate }) {
 
       <section className="space-y-4">
         <h2 className="text-sm font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-400">Progress kamu</h2>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           <StatCard label="Level" value={`Lv.${progress.level}`} sub={progress.levelTitle} />
           <StatCard label="Streak harian" value={`${progress.streakDays} hari`} accent="text-amber-600 dark:text-amber-400" />
           <StatCard label="Akurasi total" value={`${progress.overallAccuracy}%`} sub={`${progress.totalAnswers} jawaban`} accent="text-emerald-600 dark:text-emerald-400" />
