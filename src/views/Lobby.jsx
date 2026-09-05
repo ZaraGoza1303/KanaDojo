@@ -73,7 +73,7 @@ export default function Lobby({ onStartGame, onBack, initialRoomCode }) {
       const stop = pollRelay(code, (data)=>{
         if(data?._sender===lobbyIdRef.current) return
         if(data?.type==='relay-join'){ setHostStatus('connected'); try{ mp.send({ type: 'settings', settings, seed, _sender: lobbyIdRef.current }); sendViaRelay(code, { type: 'settings', settings, seed, _sender: lobbyIdRef.current })}catch{} }
-      })
+      }, {since: Date.now() - 60000})
       mp._relayStop = stop
     })
     peer.on('error', (err)=>{
@@ -155,7 +155,7 @@ export default function Lobby({ onStartGame, onBack, initialRoomCode }) {
         if(!data || data._sender===lobbyIdRef.current) return
         if(data.type==='settings'){ if(data.settings) setSettings(data.settings); if(data.seed) seedRef.current=data.seed }
         if(data.type==='start'){ startedRef.current=true; onStartGame({ roomCode:code, seed:data.seed||seedRef.current, settings:data.settings||settings, isHost:false }) }
-      })
+      }, {since: Date.now() - 60000})
       setTimeout(()=>{ if(joinStatus==='connecting'){ setJoinStatus('connected'); setJoinError('Terhubung via relay (fallback)') } },1000)
     }
     const attemptJoin = (retries=3) => {

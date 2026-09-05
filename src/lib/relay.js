@@ -15,9 +15,9 @@ export async function sendViaRelay(room, data) {
   }
 }
 
-export function pollRelay(room, onData) {
+export function pollRelay(room, onData, opts={}) {
   const r = room.toUpperCase()
-  let since = Date.now() - 60000
+  let since = opts.since ?? Date.now()
   let stopped = false
   let timer = null
   async function tick() {

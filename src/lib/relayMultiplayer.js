@@ -5,7 +5,7 @@ export function createRelayMultiplayer(room, { onData, onPeerJoin } = {}) {
   let stop = null
   const startPoll = () => {
     if (stop) stop()
-    stop = pollRelay(room, (data) => dataHandler?.(data))
+    stop = pollRelay(room, (data) => dataHandler?.(data), {since: Date.now() - 60000})
   }
   startPoll()
   if (onPeerJoin) setTimeout(()=> onPeerJoin({ peer: `relay-${room}` }), 300)
