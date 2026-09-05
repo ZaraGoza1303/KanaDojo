@@ -22,7 +22,7 @@ export function createMultiplayer({ onData, onPeerJoin, onPeerLeave, onError } =
     c.on('iceStateChanged', s=> console.log('ice',s))
     onPeerJoin?.(c)
   }
-  const PEER_CFG={ host:'0.peerjs.com', port:443, path:'/', secure:true, key:'peerjs', debug:1, config:{ iceServers:[
+  const PEER_CFG={ host:'peer.92k.de', port:443, path:'/', secure:true, key:'peerjs', debug:1, config:{ iceServers:[
     {urls:'stun:stun.l.google.com:19302'},{urls:'stun:stun1.l.google.com:19302'},{urls:'stun:stun2.l.google.com:19302'},{urls:'stun:stun3.l.google.com:19302'},{urls:'stun:stun4.l.google.com:19302'},
     {urls:'stun:openrelay.metered.ca:80'},{urls:'stun:stun.relay.metered.ca:80'},
     {urls:'turn:openrelay.metered.ca:80', username:'openrelayproject', credential:'openrelayproject'},
