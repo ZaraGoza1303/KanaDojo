@@ -189,7 +189,9 @@ export default function Lobby({ onStartGame, onBack, initialRoomCode }) {
     startedRef.current = true
     const seed = seedRef.current || roomCode + '-' + Date.now().toString(36)
     seedRef.current = seed
-    try { mpRef.current?.send({ type: 'start', seed, settings, roomCode }) } catch {}
+    const payload = { type: 'start', seed, settings, roomCode }
+    try { mpRef.current?.send(payload) } catch {}
+    try { sendViaRelay(roomCode, payload) } catch {}
     onStartGame({ roomCode, seed, settings, isHost: true })
   }
 

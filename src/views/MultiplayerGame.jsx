@@ -11,6 +11,7 @@ import { accuracy as calcAccuracy, kanaTextToRomaji } from '../lib/romaji.js'
 import { comboMultiplier } from '../lib/progress.js'
 import { fireConfetti } from '../lib/confetti.js'
 import { playCorrect, playWrong, playCombo, playFinish, playClick } from '../lib/sound.js'
+import { sendViaRelay, pollRelay } from '../lib/relay.js'
 
 const CHALLENGE_SECONDS_QUIZ = 10
 const CHALLENGE_SECONDS_COMBO = 12
@@ -95,6 +96,7 @@ export default function MultiplayerGame({ config, progress, onExit, multiplayer 
   const [phase, setPhase] = useState('play')
   const [opponent, setOpponent] = useState({ answered: 0, correct: 0, accuracy: 0, connected: true })
   const [disconnected, setDisconnected] = useState(false)
+  const seenOppRef = useRef(new Set())
   const inputRef = useRef(null)
 
   const currentEntry = useMemo(() => {
@@ -126,11 +128,15 @@ export default function MultiplayerGame({ config, progress, onExit, multiplayer 
     return () => clearTimeout(t)
   }, [phase, challenge, timeLeft, feedback, currentEntry])
 
+  const sendBoth = (data) => { try{ multiplayer?.send?.(data) }catch{}; try{ if(roomCode) sendViaRelay(roomCode, data) }catch{} }
   useEffect(() => {
-    if (!multiplayer) return
+    if (!multiplayer && !roomCode) return
     const handleData = (data) => {
       if (!data) return
       if (data.type === 'answer') {
+        const idxKey = typeof data.index === 'number' ? data.index : `${data.correct}-${data.time}`
+        if (seenOppRef.current.has(idxKey)) return
+        seenOppRef.current.add(idxKey)
         setOpponent((prev) => {
           const answeredNext = typeof data.index === 'number' ? Math.max(prev.answered, data.index + 1) : prev.answered + 1
           const correctNext = prev.correct + (data.correct ? 1 : 0)
@@ -194,8 +200,13 @@ export default function MultiplayerGame({ config, progress, onExit, multiplayer 
       const prev = multiplayer.onPeerClose
       multiplayer.onPeerClose = (...args) => { handleLeave(); try { prev(...args) } catch {} }
     }
-    return cleanup
-  }, [multiplayer])
+    let relayStop = null
+    if (roomCode) {
+      relayStop = pollRelay(roomCode, handleData)
+    }
+    const prevCleanup = cleanup
+    return () => { prevCleanup(); if (relayStop) relayStop() }
+  }, [multiplayer, roomCode])
 
   const finishGame = useCallback(() => {
     const acc = answeredRef.current > 0 ? Math.round((correctCount / answeredRef.current) * 100) : 0
@@ -264,7 +275,7 @@ export default function MultiplayerGame({ config, progress, onExit, multiplayer 
       } else {
         playCorrect()
       }
-      try { multiplayer?.send?.({ type: 'answer', index: currentIdx, accuracy: acc, correct: true, time: Date.now() }) } catch {}
+      sendBoth({ type: 'answer', index: currentIdx, accuracy: acc, correct: true, time: Date.now() })
       setTimeout(() => {
         if (answeredRef.current >= total) finishGame()
         else {
@@ -285,7 +296,7 @@ export default function MultiplayerGame({ config, progress, onExit, multiplayer 
       try { progress.addXp(1) } catch {}
       setFeedback('wrong')
       playWrong()
-      try { multiplayer?.send?.({ type: 'answer', index: currentIdx, accuracy: acc, correct: false, time: Date.now() }) } catch {}
+      sendBoth({ type: 'answer', index: currentIdx, accuracy: acc, correct: false, time: Date.now() })
       if (mode === 'translate') {
         setTimeout(() => {
           if (answeredRef.current >= total) finishGame()
@@ -319,7 +330,7 @@ export default function MultiplayerGame({ config, progress, onExit, multiplayer 
     setMistakes((m) => [...m, { kana: kanaDisp, romaji: expected, typed: '(dilewati)' }])
     try { progress.recordAnswer(false) } catch {}
     try { progress.addXp(1) } catch {}
-    try { multiplayer?.send?.({ type: 'answer', index: idx, accuracy: 0, correct: false, time: Date.now() }) } catch {}
+    sendBoth({ type: 'answer', index: idx, accuracy: 0, correct: false, time: Date.now() })
     setCombo(0)
     if (answeredRef.current >= total) finishGame()
     else {
@@ -399,7 +410,7 @@ export default function MultiplayerGame({ config, progress, onExit, multiplayer 
         )}
         <div className="flex justify-center gap-3">
           <Button variant="ghost" onClick={onExit}>Kembali</Button>
-          <Button onClick={() => { playClick(); setIdx(0); answeredRef.current = 0; setAnswered(0); setCorrectCount(0); setCombo(0); setBestCombo(0); setXpEarned(0); setMistakes([]); setAnswer(''); setFeedback(null); setHintReveal(0); setHintUsed(false); setTimeLeft(challengeSeconds); setOpponent({ answered: 0, correct: 0, accuracy: 0, connected: true }); setDisconnected(false); setPhase('play'); setTimeout(() => inputRef.current?.focus(), 50) }}>Main Lagi</Button>
+          <Button onClick={() => { playClick(); seenOppRef.current.clear(); setIdx(0); answeredRef.current = 0; setAnswered(0); setCorrectCount(0); setCombo(0); setBestCombo(0); setXpEarned(0); setMistakes([]); setAnswer(''); setFeedback(null); setHintReveal(0); setHintUsed(false); setTimeLeft(challengeSeconds); setOpponent({ answered: 0, correct: 0, accuracy: 0, connected: true }); setDisconnected(false); setPhase('play'); setTimeout(() => inputRef.current?.focus(), 50) }}>Main Lagi</Button>
         </div>
       </div>
     )
