@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { Card, Button, Badge, Segmented } from '../components/ui.jsx'
 import { genRoomCode, createMultiplayer, setActiveMultiplayer } from '../lib/multiplayer.js'
+import { sendViaRelay, pollRelay } from '../lib/relay.js'
+import { createRelayMultiplayer } from '../lib/relayMultiplayer.js'
 
 export default function Lobby({ onStartGame, onBack, initialRoomCode }) {
   const [roomCode, setRoomCode] = useState('')
@@ -46,7 +48,7 @@ export default function Lobby({ onStartGame, onBack, initialRoomCode }) {
       onData: () => {},
       onPeerJoin: () => {
         setHostStatus('connected')
-        setTimeout(() => { try { mp.send({ type: 'settings', settings, seed }) } catch {} }, 400)
+        setTimeout(() => { try { mp.send({ type: 'settings', settings, seed }); sendViaRelay(code, { type: 'settings', settings, seed }) } catch {} }, 400)
       },
       onPeerLeave: () => setHostStatus('waiting'),
       onError: (err) => {
@@ -66,6 +68,11 @@ export default function Lobby({ onStartGame, onBack, initialRoomCode }) {
     peer.on('open', (id)=>{
       console.log('host open',id)
       setHostStatus('waiting')
+      try{ sendViaRelay(code, { type: 'host-ready', seed, settings }) }catch{}
+      const stop = pollRelay(code, (data)=>{
+        if(data?.type==='relay-join'){ setHostStatus('connected'); try{ mp.send({ type: 'settings', settings, seed }); sendViaRelay(code, { type: 'settings', settings, seed })}catch{} }
+      })
+      mp._relayStop = stop
     })
     peer.on('error', (err)=>{
       console.error('host peer error',err)
@@ -123,6 +130,32 @@ export default function Lobby({ onStartGame, onBack, initialRoomCode }) {
     })
     mpRef.current = mp
     setActiveMultiplayer(mp)
+    let relayMp=null
+    let relayStop=null
+    const tryRelay = () => {
+      console.log('fallback to relay',code)
+      setJoinStatus('connecting')
+      setJoinError('P2P gagal, coba via relay...')
+      try{ mp.getPeer()?.destroy?.() }catch{}
+      relayMp = createRelayMultiplayer(code, {
+        onData: (data)=>{
+          if(!data) return
+          if(data.type==='settings'){ if(data.settings) setSettings(data.settings); if(data.seed) seedRef.current=data.seed }
+          if(data.type==='start'){ startedRef.current=true; onStartGame({ roomCode:code, seed:data.seed||seedRef.current, settings:data.settings||settings, isHost:false }) }
+          if(data.type==='host-ready'){ setJoinStatus('connected'); setJoinError(''); try{ sendViaRelay(code,{type:'relay-join'}) }catch{} }
+        },
+        onPeerJoin: ()=>{ setJoinStatus('connected'); setJoinError('Terhubung via relay') }
+      })
+      mpRef.current = relayMp
+      setActiveMultiplayer(relayMp)
+      try{ sendViaRelay(code,{type:'relay-join'}) }catch{}
+      relayStop = pollRelay(code, (data)=>{
+        if(!data) return
+        if(data.type==='settings'){ if(data.settings) setSettings(data.settings); if(data.seed) seedRef.current=data.seed }
+        if(data.type==='start'){ startedRef.current=true; onStartGame({ roomCode:code, seed:data.seed||seedRef.current, settings:data.settings||settings, isHost:false }) }
+      })
+      setTimeout(()=>{ if(joinStatus==='connecting'){ setJoinStatus('connected'); setJoinError('Terhubung via relay (fallback)') } },1000)
+    }
     const attemptJoin = (retries=3) => {
       mp.join(code)
       setTimeout(() => {
@@ -134,13 +167,15 @@ export default function Lobby({ onStartGame, onBack, initialRoomCode }) {
             setTimeout(()=> attemptJoin(retries-1), 1500)
             return 'connecting'
           }
-          return 'error'
+          tryRelay()
+          return 'connecting'
         })
-        setJoinError((prev) => {
-          if(prev) return prev
-          const peerId = mp.getPeer()?.id || 'unknown'
-          return `Gagal terhubung ke ${code} (peer ${peerId.slice(0,8)}…) setelah 3x coba. Wifi-wifi beda ISP sering blokir P2P — coba host di kuota/mobile data (terbukti bisa) atau satu WiFi yang sama. Host pastikan masih di Waiting.`
-        })
+        if(retries<=0){
+          setJoinError((prev) => {
+            if(prev && !prev.includes('Gagal terhubung')) return prev
+            return `P2P gagal, mencoba relay...`
+          })
+        }
       }, 5000)
     }
     attemptJoin(3)
