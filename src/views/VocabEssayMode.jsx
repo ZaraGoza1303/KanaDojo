@@ -106,12 +106,7 @@ export default function VocabEssayMode({ progress, onExit }){
     }
   },[pos,queue.length,wrong])
 
-  useEffect(()=>{
-    if(!feedback) return
-    const h=(e)=>{ if(e.key==='Enter'){ e.preventDefault(); next() } }
-    window.addEventListener('keydown', h)
-    return ()=> window.removeEventListener('keydown', h)
-  },[feedback, next])
+
 
   const handleExit = useCallback(()=>{
     try{localStorage.removeItem(ES_KEY)}catch{}
@@ -161,7 +156,7 @@ export default function VocabEssayMode({ progress, onExit }){
       </Card>
 
       <Card className="p-4 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700">
-        <input value={input} onChange={e=> setInput(e.target.value)} onKeyDown={e=>{ if(e.key==='Enter'){ if(feedback) next(); else submit() } }} disabled={!!feedback} placeholder="ketik arti Indonesia..." className={`w-full rounded-2xl border px-5 py-4 text-center text-lg outline-none ${feedback==='correct' ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : feedback==='wrong' ? 'border-red-400 bg-red-50' : 'border-slate-300 bg-white dark:bg-zinc-700 text-slate-900 dark:text-white'}`} autoCapitalize="off" autoCorrect="off" spellCheck={false} />
+        <input value={input} onChange={e=> setInput(e.target.value)} onKeyDown={e=>{ if(e.key==='Enter'){ e.preventDefault(); if(feedback) next(); else submit() } }} placeholder="ketik arti Indonesia..." className={`w-full rounded-2xl border px-5 py-4 text-center text-lg outline-none ${feedback==='correct' ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : feedback==='wrong' ? 'border-red-400 bg-red-50' : 'border-slate-300 bg-white dark:bg-zinc-700 text-slate-900 dark:text-white'}`} autoCapitalize="off" autoCorrect="off" spellCheck={false} autoFocus />
         {!feedback ? (
           <div className="mt-3 flex justify-center gap-2">
             <Button onClick={submit} disabled={!input.trim()}>Periksa</Button>
