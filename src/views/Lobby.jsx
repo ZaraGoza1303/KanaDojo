@@ -13,6 +13,7 @@ export default function Lobby({ onStartGame, onBack, initialRoomCode }) {
   const [copied, setCopied] = useState(false)
   const [settings, setSettings] = useState({ mode: 'quiz', length: 20, challenge: false, dakuten: false })
   const mpRef = useRef(null)
+  const lobbyIdRef = useRef(Math.random().toString(36).slice(2,9))
   const seedRef = useRef('')
   const startedRef = useRef(false)
 
@@ -48,7 +49,7 @@ export default function Lobby({ onStartGame, onBack, initialRoomCode }) {
       onData: () => {},
       onPeerJoin: () => {
         setHostStatus('connected')
-        setTimeout(() => { try { mp.send({ type: 'settings', settings, seed }); sendViaRelay(code, { type: 'settings', settings, seed }) } catch {} }, 400)
+        setTimeout(() => { try { mp.send({ type: 'settings', settings, seed, _sender: lobbyIdRef.current }); sendViaRelay(code, { type: 'settings', settings, seed, _sender: lobbyIdRef.current }) } catch {} }, 400)
       },
       onPeerLeave: () => setHostStatus('waiting'),
       onError: (err) => {
@@ -68,9 +69,10 @@ export default function Lobby({ onStartGame, onBack, initialRoomCode }) {
     peer.on('open', (id)=>{
       console.log('host open',id)
       setHostStatus('waiting')
-      try{ sendViaRelay(code, { type: 'host-ready', seed, settings }) }catch{}
+      try{ sendViaRelay(code, { type: 'host-ready', seed, settings, _sender: lobbyIdRef.current }) }catch{}
       const stop = pollRelay(code, (data)=>{
-        if(data?.type==='relay-join'){ setHostStatus('connected'); try{ mp.send({ type: 'settings', settings, seed }); sendViaRelay(code, { type: 'settings', settings, seed })}catch{} }
+        if(data?._sender===lobbyIdRef.current) return
+        if(data?.type==='relay-join'){ setHostStatus('connected'); try{ mp.send({ type: 'settings', settings, seed, _sender: lobbyIdRef.current }); sendViaRelay(code, { type: 'settings', settings, seed, _sender: lobbyIdRef.current })}catch{} }
       })
       mp._relayStop = stop
     })
@@ -139,18 +141,18 @@ export default function Lobby({ onStartGame, onBack, initialRoomCode }) {
       try{ mp.getPeer()?.destroy?.() }catch{}
       relayMp = createRelayMultiplayer(code, {
         onData: (data)=>{
-          if(!data) return
+          if(!data || data._sender===lobbyIdRef.current) return
           if(data.type==='settings'){ if(data.settings) setSettings(data.settings); if(data.seed) seedRef.current=data.seed }
           if(data.type==='start'){ startedRef.current=true; onStartGame({ roomCode:code, seed:data.seed||seedRef.current, settings:data.settings||settings, isHost:false }) }
-          if(data.type==='host-ready'){ setJoinStatus('connected'); setJoinError(''); try{ sendViaRelay(code,{type:'relay-join'}) }catch{} }
+          if(data.type==='host-ready'){ setJoinStatus('connected'); setJoinError(''); try{ sendViaRelay(code,{type:'relay-join', _sender: lobbyIdRef.current}) }catch{} }
         },
         onPeerJoin: ()=>{ setJoinStatus('connected'); setJoinError('Terhubung via relay') }
       })
       mpRef.current = relayMp
       setActiveMultiplayer(relayMp)
-      try{ sendViaRelay(code,{type:'relay-join'}) }catch{}
+      try{ sendViaRelay(code,{type:'relay-join', _sender: lobbyIdRef.current}) }catch{}
       relayStop = pollRelay(code, (data)=>{
-        if(!data) return
+        if(!data || data._sender===lobbyIdRef.current) return
         if(data.type==='settings'){ if(data.settings) setSettings(data.settings); if(data.seed) seedRef.current=data.seed }
         if(data.type==='start'){ startedRef.current=true; onStartGame({ roomCode:code, seed:data.seed||seedRef.current, settings:data.settings||settings, isHost:false }) }
       })
@@ -189,7 +191,7 @@ export default function Lobby({ onStartGame, onBack, initialRoomCode }) {
     startedRef.current = true
     const seed = seedRef.current || roomCode + '-' + Date.now().toString(36)
     seedRef.current = seed
-    const payload = { type: 'start', seed, settings, roomCode }
+    const payload = { type: 'start', seed, settings, roomCode, _sender: lobbyIdRef.current }
     try { mpRef.current?.send(payload) } catch {}
     try { sendViaRelay(roomCode, payload) } catch {}
     onStartGame({ roomCode, seed, settings, isHost: true })

@@ -32,6 +32,7 @@ function getChallengeSeconds(mode) {
 export default function MultiplayerGame({ config, progress, onExit, multiplayer }) {
   const roomCode = config?.roomCode ?? config?.settings?.roomCode ?? ''
   const seed = config?.seed ?? config?.settings?.seed ?? 'default-seed'
+  const clientIdRef = useRef(Math.random().toString(36).slice(2,9))
   const mode = config?.mode ?? config?.settings?.mode ?? 'quiz'
   const length = config?.length ?? config?.settings?.length ?? 20
   const challenge = config?.challenge ?? config?.settings?.challenge ?? false
@@ -128,13 +129,14 @@ export default function MultiplayerGame({ config, progress, onExit, multiplayer 
     return () => clearTimeout(t)
   }, [phase, challenge, timeLeft, feedback, currentEntry])
 
-  const sendBoth = (data) => { try{ multiplayer?.send?.(data) }catch{}; try{ if(roomCode) sendViaRelay(roomCode, data) }catch{} }
+  const sendBoth = (data) => { const payload={...data, _sender: clientIdRef.current}; try{ multiplayer?.send?.(payload) }catch{}; try{ if(roomCode) sendViaRelay(roomCode, payload) }catch{} }
   useEffect(() => {
     if (!multiplayer && !roomCode) return
     const handleData = (data) => {
       if (!data) return
+      if (data._sender && data._sender===clientIdRef.current) return
       if (data.type === 'answer') {
-        const idxKey = typeof data.index === 'number' ? data.index : `${data.correct}-${data.time}`
+        const idxKey = typeof data.index === 'number' ? `${data._sender||'peer'}:${data.index}` : `${data._sender||'peer'}:${data.correct}-${data.time}`
         if (seenOppRef.current.has(idxKey)) return
         seenOppRef.current.add(idxKey)
         setOpponent((prev) => {
