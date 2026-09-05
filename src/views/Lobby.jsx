@@ -234,13 +234,21 @@ export default function Lobby({ onStartGame, onBack, initialRoomCode }) {
 
               <div>
                 <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-slate-600 dark:text-zinc-400">Mode</label>
-                <Segmented value={settings.mode} onChange={(v) => setSettings((s) => ({ ...s, mode: v, length: v==='translate' ? ([1,2,5].includes(s.length)?s.length:2) : [1,2,5].includes(s.length)?20:s.length }))} options={[{ value: 'translate', label: 'Translate' },{ value: 'quiz', label: 'Tes Huruf' },{ value: 'combo', label: 'Combo' }]} />
+                <Segmented value={settings.mode} onChange={(v) => setSettings((s) => {
+                  let len=s.length
+                  if(v==='translate') len=[1,2,5].includes(len)?len:2
+                  else if(v==='vocab') len=[10,20,30].includes(len)?len:20
+                  else len=[1,2,5].includes(len)?20:len
+                  return { ...s, mode: v, length: len }
+                })} options={[{ value: 'translate', label: 'Translate' },{ value: 'quiz', label: 'Tes Huruf' },{ value: 'combo', label: 'Combo' },{ value: 'vocab', label: 'Kosakata' }]} />
               </div>
 
               <div>
                 <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-slate-600 dark:text-zinc-400">Jumlah soal</label>
                 {settings.mode==='translate' ? (
                   <Segmented value={settings.length} onChange={(v) => setSettings((s) => ({ ...s, length: v }))} options={[{ value: 1, label: '1 soal' },{ value: 2, label: '2 soal' },{ value: 5, label: '5 soal' }]} />
+                ) : settings.mode==='vocab' ? (
+                  <Segmented value={settings.length} onChange={(v) => setSettings((s) => ({ ...s, length: v }))} options={[{ value: 10, label: '10 soal' },{ value: 20, label: '20 soal' },{ value: 30, label: '30 soal' }]} />
                 ) : (
                   <Segmented value={settings.length} onChange={(v) => setSettings((s) => ({ ...s, length: v }))} options={[{ value: 20, label: '20 soal' },{ value: 30, label: '30 soal' },{ value: 0, label: 'Endless' }]} />
                 )}

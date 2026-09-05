@@ -7,6 +7,7 @@ import {
 } from '../data/kana.js'
 import { EXTENDED_KANA, YOON_KANA } from '../data/extended.js'
 import { TEXTS } from '../data/texts.js'
+import { VOCAB } from '../data/vocab.js'
 import { accuracy as calcAccuracy, kanaTextToRomaji } from '../lib/romaji.js'
 import { comboMultiplier } from '../lib/progress.js'
 import { fireConfetti } from '../lib/confetti.js'
@@ -26,6 +27,7 @@ const COMBO_LETTERS = SINGLE_LETTERS
 function getChallengeSeconds(mode) {
   if (mode === 'combo') return CHALLENGE_SECONDS_COMBO
   if (mode === 'translate') return CHALLENGE_SECONDS_TRANSLATE
+  if (mode === 'vocab') return CHALLENGE_SECONDS_QUIZ
   return CHALLENGE_SECONDS_QUIZ
 }
 
@@ -48,6 +50,7 @@ export default function MultiplayerGame({ config, progress, onExit, multiplayer 
   }, [seed, dakuten])
 
   const comboPool = useMemo(() => shuffleWithSeed(COMBO_LETTERS, seed + ':combo'), [seed])
+  const vocabPool = useMemo(() => shuffleWithSeed(VOCAB, seed + ':vocab'), [seed])
 
   const translateIndices = useMemo(() => {
     const arr = TEXTS.map((_, i) => i)
@@ -59,27 +62,39 @@ export default function MultiplayerGame({ config, progress, onExit, multiplayer 
       const tIdx = translateIndices[idx % translateIndices.length]
       return TEXTS[tIdx]
     }
+    if (mode === 'vocab') {
+      return vocabPool[idx % vocabPool.length]
+    }
     if (mode === 'combo') {
-      // Tanpa pengulangan: satu putaran penuh pool, lalu acak ulang secara
-      // deterministik (seed + putaran) supaya kedua pemain tetap sinkron.
       const cycle = Math.floor(idx / comboPool.length)
       const pool = cycle === 0 ? comboPool : shuffleWithSeed(COMBO_LETTERS, seed + ':combo:' + cycle)
       return pool[idx % pool.length]
     }
     return quizPool[idx % quizPool.length]
-  }, [mode, quizPool, comboPool, translateIndices, seed])
+  }, [mode, quizPool, comboPool, vocabPool, translateIndices, seed])
 
   const getExpectedRomaji = useCallback((entry) => {
     if (!entry) return ''
     if (mode === 'translate') return kanaTextToRomaji(entry.kana)
+    if (mode === 'vocab') return entry.arti ?? ''
     return entry[1] ?? ''
   }, [mode])
 
   const getKanaDisplay = useCallback((entry) => {
     if (!entry) return ''
     if (mode === 'translate') return entry.kana
+    if (mode === 'vocab') return entry.kana
     return entry[0] ?? ''
   }, [mode])
+
+  const getVocabOptions = useCallback((entry, idx) => {
+    if (!entry || mode!=='vocab') return []
+    const others = VOCAB.filter(v=> v.id!==entry.id)
+    const shuffledOthers = shuffleWithSeed(others, seed+':vocab-opt:'+idx)
+    const picks = shuffledOthers.slice(0,3).map(v=> v.arti)
+    const all = [entry.arti, ...picks]
+    return shuffleWithSeed(all, seed+':vocab-shuffle:'+idx)
+  }, [mode, seed])
 
   const [idx, setIdx] = useState(0)
   const [answer, setAnswer] = useState('')
@@ -98,6 +113,7 @@ export default function MultiplayerGame({ config, progress, onExit, multiplayer 
   const [opponent, setOpponent] = useState({ answered: 0, correct: 0, accuracy: 0, connected: true })
   const [disconnected, setDisconnected] = useState(false)
   const seenOppRef = useRef(new Set())
+  const [vocabPick, setVocabPick] = useState(null)
   const inputRef = useRef(null)
 
   const currentEntry = useMemo(() => {
@@ -106,6 +122,10 @@ export default function MultiplayerGame({ config, progress, onExit, multiplayer 
   }, [idx, getCurrentEntry, phase])
 
   const expected = useMemo(() => getExpectedRomaji(currentEntry), [currentEntry, getExpectedRomaji])
+  const vocabOptions = useMemo(() => {
+    if (mode !== 'vocab' || !currentEntry) return []
+    return getVocabOptions(currentEntry, idx)
+  }, [mode, currentEntry, idx, getVocabOptions])
 
   const liveAccuracy = answered > 0 ? Math.round((correctCount / answered) * 100) : 0
   const oppAccuracy = opponent.answered > 0 ? Math.round((opponent.correct / opponent.answered) * 100) : 0
@@ -212,7 +232,7 @@ export default function MultiplayerGame({ config, progress, onExit, multiplayer 
 
   const finishGame = useCallback(() => {
     const acc = answeredRef.current > 0 ? Math.round((correctCount / answeredRef.current) * 100) : 0
-    const labelMap = { quiz: 'Multiplayer Tes Huruf', combo: 'Multiplayer Combo', translate: 'Multiplayer Translate' }
+    const labelMap = { quiz: 'Multiplayer Tes Huruf', combo: 'Multiplayer Combo', translate: 'Multiplayer Translate', vocab: 'Multiplayer Kosakata' }
     const label = labelMap[mode] ?? 'Multiplayer'
     const suffix = length === 0 ? 'Endless' : `${length} soal`
     try {
@@ -244,6 +264,7 @@ export default function MultiplayerGame({ config, progress, onExit, multiplayer 
     }
     setAnswer('')
     setFeedback(null)
+    setVocabPick(null)
     setHintReveal(0)
     setHintUsed(false)
     setTimeLeft(challengeSeconds)
@@ -326,7 +347,7 @@ export default function MultiplayerGame({ config, progress, onExit, multiplayer 
   }
 
   const handleSkip = () => {
-    if (feedback) return
+    if (feedback || vocabPick) return
     bumpAnswered()
     const kanaDisp = getKanaDisplay(currentEntry)
     setMistakes((m) => [...m, { kana: kanaDisp, romaji: expected, typed: '(dilewati)' }])
@@ -334,6 +355,7 @@ export default function MultiplayerGame({ config, progress, onExit, multiplayer 
     try { progress.addXp(1) } catch {}
     sendBoth({ type: 'answer', index: idx, accuracy: 0, correct: false, time: Date.now() })
     setCombo(0)
+    setVocabPick(null)
     if (answeredRef.current >= total) finishGame()
     else {
       setAnswer('')
@@ -344,6 +366,44 @@ export default function MultiplayerGame({ config, progress, onExit, multiplayer 
       setIdx((i) => i + 1)
       setTimeout(() => inputRef.current?.focus(), 30)
     }
+  }
+  const handleVocabPick = (arti) => {
+    if (vocabPick || feedback) return
+    const correct = arti === expected
+    bumpAnswered()
+    setVocabPick(arti)
+    const xp = correct ? 10 : 1
+    if (correct) {
+      const newCombo = combo + 1
+      setCombo(newCombo)
+      setBestCombo((b)=> Math.max(b,newCombo))
+      setCorrectCount((c)=> c+1)
+      setXpEarned((x)=> x+xp)
+      try{ progress.recordAnswer(true) }catch{}
+      try{ progress.addXp(xp) }catch{}
+      setFeedback('correct')
+      playCorrect()
+    } else {
+      setCombo(0)
+      const kanaDisp = getKanaDisplay(currentEntry)
+      setMistakes((m)=> [...m, { kana: kanaDisp, romaji: expected, typed: arti }])
+      try{ progress.recordAnswer(false) }catch{}
+      try{ progress.addXp(1) }catch{}
+      setFeedback('wrong')
+      playWrong()
+    }
+    sendBoth({ type: 'answer', index: idx, accuracy: correct?100:0, correct, time: Date.now() })
+    setTimeout(()=>{
+      if(answeredRef.current >= total) finishGame()
+      else {
+        setVocabPick(null)
+        setFeedback(null)
+        setHintReveal(0)
+        setHintUsed(false)
+        setTimeLeft(challengeSeconds)
+        setIdx((i)=> i+1)
+      }
+    }, 900)
   }
 
   if (phase === 'result') {
@@ -468,37 +528,58 @@ export default function MultiplayerGame({ config, progress, onExit, multiplayer 
             </div>
           )}
 
-          <div className="mx-auto mt-6 max-w-sm">
-            <input
-              ref={inputRef}
-              value={answer}
-              onChange={(e) => setAnswer(e.target.value)}
-              onKeyDown={handleKey}
-              disabled={feedback === 'correct'}
-              placeholder={isTranslate ? 'romaji...' : 'romaji...'}
-              autoCapitalize="off"
-              autoCorrect="off"
-              spellCheck={false}
-              className={`w-full rounded-2xl border px-5 py-4 text-center text-lg outline-none transition placeholder:text-slate-400 dark:placeholder:text-slate-500 ${feedback === 'correct' ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300' : feedback === 'wrong' ? 'border-red-400 bg-red-50 dark:bg-red-950 text-slate-900 dark:text-white' : 'border-slate-300 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-slate-900 dark:text-white focus:border-zinc-500 focus:ring-2 focus:ring-zinc-500/20'}`}
-            />
-          </div>
-
-          {hintPrefix && feedback === null && (
-            <p className="mt-3 text-sm text-amber-700 dark:text-amber-300">Dimulai dengan: <span className="font-mono text-base font-bold">{hintPrefix}...</span> <span className="text-xs text-slate-600 dark:text-zinc-400">(XP dibagi 2)</span></p>
-          )}
-
-          {feedback === 'wrong' && (
-            <div className="mt-4 space-y-1">
-              <p className="text-sm text-slate-600 dark:text-zinc-400">Jawaban benar: <span className="font-mono text-lg font-bold text-emerald-700 dark:text-emerald-300">{expected}</span></p>
-              <Button onClick={() => { if (answeredRef.current >= total) finishGame(); else { setAnswer(''); setFeedback(null); setHintReveal(0); setHintUsed(false); setTimeLeft(challengeSeconds); setIdx((i) => i + 1); setTimeout(() => inputRef.current?.focus(), 30) } }}>Lanjut</Button>
+          {mode==='vocab' ? (
+            <div className="mt-6 grid gap-2 sm:grid-cols-2">
+              {vocabOptions.map(opt=>{
+                const isCorrect = opt===expected
+                const isPicked = vocabPick===opt
+                const show = !!feedback
+                return (
+                  <button key={opt} onClick={()=> handleVocabPick(opt)} disabled={!!feedback}
+                    className={`rounded-2xl border px-4 py-4 text-left font-medium transition ${show && isCorrect ? 'bg-emerald-50 border-emerald-300 text-emerald-800 dark:bg-emerald-950 dark:border-emerald-700 dark:text-emerald-200' : show && isPicked ? 'bg-red-50 border-red-300 text-red-800 dark:bg-red-950 dark:border-red-700 dark:text-red-200' : 'bg-white border-slate-200 hover:bg-slate-50 dark:bg-zinc-800 dark:border-zinc-700 dark:hover:bg-zinc-700 text-slate-900 dark:text-white'}`}>
+                    {opt}
+                  </button>
+                )
+              })}
+            </div>
+          ) : (
+            <div className="mx-auto mt-6 max-w-sm">
+              <input
+                ref={inputRef}
+                value={answer}
+                onChange={(e) => setAnswer(e.target.value)}
+                onKeyDown={handleKey}
+                disabled={feedback === 'correct'}
+                placeholder={isTranslate ? 'romaji...' : 'romaji...'}
+                autoCapitalize="off"
+                autoCorrect="off"
+                spellCheck={false}
+                className={`w-full rounded-2xl border px-5 py-4 text-center text-lg outline-none transition placeholder:text-slate-400 dark:placeholder:text-slate-500 ${feedback === 'correct' ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300' : feedback === 'wrong' ? 'border-red-400 bg-red-50 dark:bg-red-950 text-slate-900 dark:text-white' : 'border-slate-300 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-slate-900 dark:text-white focus:border-zinc-500 focus:ring-2 focus:ring-zinc-500/20'}`}
+              />
             </div>
           )}
 
-          {feedback === null && (
+          {hintPrefix && feedback === null && mode!=='vocab' && (
+            <p className="mt-3 text-sm text-amber-700 dark:text-amber-300">Dimulai dengan: <span className="font-mono text-base font-bold">{hintPrefix}...</span> <span className="text-xs text-slate-600 dark:text-zinc-400">(XP dibagi 2)</span></p>
+          )}
+
+          {feedback === 'wrong' && mode!=='vocab' && (
+            <div className="mt-4 space-y-1">
+              <p className="text-sm text-slate-600 dark:text-zinc-400">Jawaban benar: <span className="font-mono text-lg font-bold text-emerald-700 dark:text-emerald-300">{expected}</span></p>
+              <Button onClick={() => { if (answeredRef.current >= total) finishGame(); else { setAnswer(''); setFeedback(null); setVocabPick(null); setHintReveal(0); setHintUsed(false); setTimeLeft(challengeSeconds); setIdx((i) => i + 1); setTimeout(() => inputRef.current?.focus(), 30) } }}>Lanjut</Button>
+            </div>
+          )}
+
+          {feedback === null && mode!=='vocab' && (
             <div className="mt-4 flex justify-center gap-2">
               <Button variant="ghost" className="px-3 py-1.5 text-xs" onClick={showHint}>Hint</Button>
               <Button variant="ghost" className="px-3 py-1.5 text-xs" onClick={handleSkip}>Lewati</Button>
               <Button onClick={() => handleSubmit(false)} className="px-4 py-1.5 text-xs">Periksa</Button>
+            </div>
+          )}
+          {mode==='vocab' && feedback && (
+            <div className="mt-4">
+              <p className="text-sm text-slate-600 dark:text-zinc-400">Jawaban benar: <span className="font-bold text-emerald-700 dark:text-emerald-300">{expected}</span></p>
             </div>
           )}
 
