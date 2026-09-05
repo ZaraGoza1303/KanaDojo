@@ -37,7 +37,7 @@ export default function Lobby({ onStartGame, onBack, initialRoomCode }) {
     const seed = code + '-' + Date.now().toString(36)
     seedRef.current = seed
     setRoomCode(code)
-    setHostStatus('waiting')
+    setHostStatus('connecting')
     setJoinStatus('idle')
     setJoinError('')
     setCopied(false)
@@ -49,10 +49,34 @@ export default function Lobby({ onStartGame, onBack, initialRoomCode }) {
         setTimeout(() => { try { mp.send({ type: 'settings', settings, seed }) } catch {} }, 400)
       },
       onPeerLeave: () => setHostStatus('waiting'),
+      onError: (err) => {
+        if(err?.type==='unavailable-id'){
+          setHostStatus('error')
+          setJoinError('Kode sudah dipakai, buat ulang.')
+        } else if(err){
+          console.error('host err',err)
+        }
+      }
     })
     mpRef.current = mp
     setActiveMultiplayer(mp)
-    mp.host(code)
+    const peer = mp.host(code)
+    peer.on('open', (id)=>{
+      console.log('host open',id)
+      setHostStatus('waiting')
+    })
+    peer.on('error', (err)=>{
+      console.error('host peer error',err)
+      if(err?.type==='unavailable-id'){
+        setHostStatus('error')
+      }
+    })
+    peer.on('disconnected', ()=> console.log('host disconnected'))
+    setTimeout(()=>{
+      if(mp.getPeer()?.open===false){
+        console.warn('host not open after 5s')
+      }
+    },5000)
   }
 
   const handleJoin = () => {
@@ -97,15 +121,27 @@ export default function Lobby({ onStartGame, onBack, initialRoomCode }) {
     })
     mpRef.current = mp
     setActiveMultiplayer(mp)
-    mp.join(code)
-    setTimeout(() => {
-      setJoinStatus((s) => s === 'connecting' ? 'error' : s)
-      setJoinError((prev) => {
-        if(prev) return prev
-        const peerId = mp.getPeer()?.id || 'unknown'
-        return `Gagal terhubung ke ${code} (peer ${peerId.slice(0,8)}…). Host pastikan masih di Waiting & pakai ngrok HTTPS yang sama. Coba host Buat Ulang Kode.`
-      })
-    }, 15000)
+    const attemptJoin = (retries=3) => {
+      mp.join(code)
+      setTimeout(() => {
+        setJoinStatus((s) => {
+          if(s!=='connecting') return s
+          if(retries>0){
+            console.log(`retry join ${code} left ${retries}`)
+            try{ mp.getPeer()?.destroy?.() }catch{}
+            setTimeout(()=> attemptJoin(retries-1), 1500)
+            return 'connecting'
+          }
+          return 'error'
+        })
+        setJoinError((prev) => {
+          if(prev) return prev
+          const peerId = mp.getPeer()?.id || 'unknown'
+          return `Gagal terhubung ke ${code} (peer ${peerId.slice(0,8)}…) setelah 3x coba. Host pastikan masih di Waiting (bukan refresh) & kedua pakai https://kana-dojo-neon.vercel.app yang sama.`
+        })
+      }, 5000)
+    }
+    attemptJoin(3)
   }
 
   const handleCopy = async (text) => {

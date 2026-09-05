@@ -35,30 +35,32 @@ export function createMultiplayer({ onData, onPeerJoin, onPeerLeave, onError } =
   function host(code) {
     const id = `kanadojo-${code}`
     peer = new Peer(id, PEER_CFG)
+    peer.on('open', (pid)=> console.log('peer open host',pid))
     peer.on('connection', c => {
-      c.on('open', () => setup(c))
-      c.on('error', () => { cleanup(); leaveHandler?.(c) })
+      console.log('host incoming',c.peer)
+      c.on('open', () => { console.log('host conn open',c.peer); setup(c) })
+      c.on('error', (e) => { console.error('host conn error',e); cleanup(); leaveHandler?.(c) })
     })
     peer.on('error', err => {
-      if (err?.type === 'unavailable-id') console.error(`Room ${code} already taken`)
-      else console.error('host peer error', err)
+      console.error('host peer error', err?.type, err?.message, err)
       errorHandler?.(err)
     })
-    peer.on('disconnected', () => { try { peer.reconnect() } catch {} })
-    peer.on('close', cleanup)
+    peer.on('disconnected', () => { console.log('host disconnected, reconnect'); try { peer.reconnect() } catch {} })
+    peer.on('close', ()=>{ console.log('host close'); cleanup() })
     return peer
   }
   function join(hostCode) {
     peer = new Peer(undefined, PEER_CFG)
-    peer.on('open', () => {
+    peer.on('open', (pid) => {
+      console.log('join peer open',pid,'connecting to',`kanadojo-${hostCode}`)
       const c = peer.connect(`kanadojo-${hostCode}`, { reliable: true })
-      c.on('open', () => setup(c))
-      c.on('error', e => { console.error(e); cleanup(); leaveHandler?.(c) })
-      c.on('close', () => { cleanup(); leaveHandler?.(c) })
+      c.on('open', () => { console.log('join conn open',c.peer); setup(c) })
+      c.on('error', e => { console.error('join conn error',e); errorHandler?.({type:'webrtc', message:String(e?.message||e)}); cleanup(); leaveHandler?.(c) })
+      c.on('close', () => { console.log('join conn close'); cleanup(); leaveHandler?.(c) })
     })
-    peer.on('error', err => { console.error('join peer error', err); errorHandler?.(err); if(err?.type==='peer-unavailable') leaveHandler?.({}) })
-    peer.on('disconnected', () => { try { peer.reconnect() } catch {} })
-    peer.on('close', cleanup)
+    peer.on('error', err => { console.error('join peer error', err?.type, err?.message, err); errorHandler?.(err); if(err?.type==='peer-unavailable') leaveHandler?.({}) })
+    peer.on('disconnected', () => { console.log('join disconnected'); try { peer.reconnect() } catch {} })
+    peer.on('close', ()=>{ console.log('join close'); cleanup() })
     return peer
   }
   function send(data) { if (conn?.open) conn.send(data) }
