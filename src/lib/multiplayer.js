@@ -28,10 +28,13 @@ export function createMultiplayer({ onData, onPeerJoin, onPeerLeave, onError } =
     {urls:'turn:openrelay.metered.ca:80', username:'openrelayproject', credential:'openrelayproject'},
     {urls:'turn:openrelay.metered.ca:443', username:'openrelayproject', credential:'openrelayproject'},
     {urls:'turn:openrelay.metered.ca:443?transport=tcp', username:'openrelayproject', credential:'openrelayproject'},
+    {urls:'turns:openrelay.metered.ca:443', username:'openrelayproject', credential:'openrelayproject'},
     {urls:'turn:global.relay.metered.ca:80', username:'e8dd3445f13362573124c7d7', credential:'4FZcSuz4Wb5rFqas'},
     {urls:'turn:global.relay.metered.ca:443', username:'e8dd3445f13362573124c7d7', credential:'4FZcSuz4Wb5rFqas'},
-    {urls:'turn:global.relay.metered.ca:443?transport=tcp', username:'e8dd3445f13362573124c7d7', credential:'4FZcSuz4Wb5rFqas'}
-  ], iceTransportPolicy:'all', sdpSemantics:'unified-plan' } }
+    {urls:'turn:global.relay.metered.ca:443?transport=tcp', username:'e8dd3445f13362573124c7d7', credential:'4FZcSuz4Wb5rFqas'},
+    {urls:'turns:global.relay.metered.ca:443', username:'e8dd3445f13362573124c7d7', credential:'4FZcSuz4Wb5rFqas'},
+    {urls:'turn:turn.anyfirewall.com:443?transport=tcp', username:'webrtc', credential:'webrtc'}
+  ], iceTransportPolicy:'all', sdpSemantics:'unified-plan', iceCandidatePoolSize:10 } }
   function host(code) {
     const id = `kanadojo-${code}`
     peer = new Peer(id, PEER_CFG)

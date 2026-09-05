@@ -139,7 +139,7 @@ export default function Lobby({ onStartGame, onBack, initialRoomCode }) {
         setJoinError((prev) => {
           if(prev) return prev
           const peerId = mp.getPeer()?.id || 'unknown'
-          return `Gagal terhubung ke ${code} (peer ${peerId.slice(0,8)}…) setelah 3x coba. Host pastikan masih di Waiting (bukan refresh) & kedua pakai https://kana-dojo-neon.vercel.app yang sama.`
+          return `Gagal terhubung ke ${code} (peer ${peerId.slice(0,8)}…) setelah 3x coba. Wifi-wifi beda ISP sering blokir P2P — coba host di kuota/mobile data (terbukti bisa) atau satu WiFi yang sama. Host pastikan masih di Waiting.`
         })
       }, 5000)
     }
