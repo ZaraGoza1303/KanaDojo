@@ -17,6 +17,8 @@ export default function VocabEssayMode({ progress, onExit }){
   const [feedback,setFeedback]=useState(()=> _s?.feedback || null)
   const [stats,setStats]=useState(()=> _s?.stats || {total:0, correct:0, xp:0})
   const [done,setDone]=useState(()=> !!_s?.done)
+  const uniqCorrectRef = React.useRef(new Set())
+  const uniqWrongRef = React.useRef(new Set())
   const [showRomaji,setShowRomaji]=useState(()=>{ try{return localStorage.getItem('kd-show-romaji-essay')!=='0'}catch{return true}})
 
   const current = queue[pos]
@@ -28,7 +30,8 @@ export default function VocabEssayMode({ progress, onExit }){
     if(!current || !input.trim() || feedback) return
     const ok = norm(input) === norm(current.arti)
     setFeedback(ok ? 'correct' : 'wrong')
-    if(!ok) setWrong(w=> w.some(v=> v.id===current.id) ? w : [...w, current])
+    if(ok) uniqCorrectRef.current.add(current.id)
+    else { uniqWrongRef.current.add(current.id); setWrong(w=> w.some(v=> v.id===current.id) ? w : [...w, current]) }
     const xp = ok ? 12 : 2
     setStats(s=> ({total:s.total+1, correct:s.correct+(ok?1:0), xp:s.xp+xp}))
     try{ progress?.addXp?.(xp)}catch{}

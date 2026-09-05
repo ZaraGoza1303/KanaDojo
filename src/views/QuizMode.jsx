@@ -38,6 +38,9 @@ export default function QuizMode({ progress, onExit }) {
   const [timeLeft, setTimeLeft] = useState(CHALLENGE_SECONDS)
   const inputRef = useRef(null)
   const answeredRef = useRef(_q?.answered || 0)
+  const uniqCorrectRef = useRef(new Set(_q?.uniqCorrect || []))
+  const uniqWrongRef = useRef(new Set(_q?.uniqWrong || []))
+  const initTotalRef = useRef(_q?.initTotal || 0)
 
   const buildPool = useCallback(() => {
     let list = []
@@ -63,22 +66,29 @@ export default function QuizMode({ progress, onExit }) {
   )
   const buildQueue = useCallback((total) => {
     const list = buildPool()
+    const shuffled=[...list]
+    for(let i=shuffled.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[shuffled[i],shuffled[j]]=[shuffled[j],shuffled[i]]}
+    // Ambil item unik: shuffle pool lalu slice. Kalau total > pool (jarang), putar lagi dengan shuffle baru.
     const q=[]
-    let prev=null
-    for(let i=0;i<total;i++){
-      let pick
-      do{ pick=list[Math.floor(Math.random()*list.length)] } while(list.length>1 && prev && pick[0]===prev)
-      q.push(pick)
-      prev=pick[0]
+    let src=shuffled
+    while(q.length<total){
+      for(const item of src){
+        if(q.length>=total) break
+        q.push(item)
+      }
+      src=[...list]
+      for(let i=src.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[src[i],src[j]]=[src[j],src[i]]}
     }
-    for(let i=q.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [q[i],q[j]]=[q[j],q[i]] }
     return q
   },[buildPool])
 
   const start = () => {
     playClick()
     const t = length === 0 ? Infinity : length === 'all' ? buildPool().length : length
-    let q=null; let pos=0
+    let q=null
+    initTotalRef.current = Number.isFinite(t) ? t : 0
+    uniqCorrectRef.current = new Set()
+    uniqWrongRef.current = new Set()
     if(Number.isFinite(t)){
       q=buildQueue(t)
       setQueue(q)
@@ -136,7 +146,7 @@ export default function QuizMode({ progress, onExit }) {
     const t = setTimeout(() => setTimeLeft((s) => s - 1), 1000)
     return () => clearTimeout(t)
   }, [phase, challenge, timeLeft, feedback])
-  useEffect(()=>{ if(phase==='play'){ try{localStorage.setItem(QUIZ_KEY, JSON.stringify({phase, filter, dakuten, length, challenge, current, answered, correctCount, combo, bestCombo, mistakes, pendingWrong, queue, queuePos, xpEarned}))}catch{} } else { try{localStorage.removeItem(QUIZ_KEY)}catch{} } },[phase, filter, dakuten, length, challenge, current, answered, correctCount, combo, bestCombo, mistakes, pendingWrong, queue, queuePos, xpEarned])
+  useEffect(()=>{ if(phase==='play'){ try{localStorage.setItem(QUIZ_KEY, JSON.stringify({phase, filter, dakuten, length, challenge, current, answered, correctCount, combo, bestCombo, mistakes, pendingWrong, queue, queuePos, xpEarned, uniqCorrect:[...uniqCorrectRef.current], uniqWrong:[...uniqWrongRef.current], initTotal:initTotalRef.current}))}catch{} } else { try{localStorage.removeItem(QUIZ_KEY)}catch{} } },[phase, filter, dakuten, length, challenge, current, answered, correctCount, combo, bestCombo, mistakes, pendingWrong, queue, queuePos, xpEarned])
 
   const next = (fromSubmit = false) => {
     if (!fromSubmit) bumpAnswered()
@@ -192,6 +202,7 @@ export default function QuizMode({ progress, onExit }) {
     bumpAnswered()
 
     if (correct) {
+      uniqCorrectRef.current.add(kana)
       const newCombo = combo + 1
       const mult = comboMultiplier(newCombo) * (challenge ? 1.5 : 1) * (hintUsed ? 0.5 : 1)
       const xp = Math.max(1, Math.round(10 * mult))
@@ -212,7 +223,8 @@ export default function QuizMode({ progress, onExit }) {
       setTimeout(() => next(true), 700)
     } else {
       setCombo(0)
-      setMistakes((m) => [...m, { kana, romaji, typed: timeout ? '(waktu habis!)' : answer.trim() }])
+      uniqWrongRef.current.add(kana)
+      setMistakes((m) => { const f = m.filter((x) => x.kana !== kana); return [...f, { kana, romaji, typed: timeout ? '(waktu habis!)' : answer.trim() }] })
       if(queue) setPendingWrong((p)=> p.some(([k])=> k===kana) ? p : [...p, [kana, romaji]])
       progress.recordAnswer(false)
       progress.addXp(1)
@@ -295,6 +307,10 @@ export default function QuizMode({ progress, onExit }) {
 
   if (phase === 'result') {
     const accuracy = answered > 0 ? Math.round((correctCount / answered) * 100) : 0
+    const init = initTotalRef.current
+    const uniqBenar = uniqCorrectRef.current.size
+    const uniqSalah = uniqWrongRef.current.size
+    const hasRetry = init > 0 && uniqSalah > 0
     const resultLabel = accuracy >= 90 ? 'Lulus' : accuracy >= 70 ? 'Cukup' : accuracy >= 50 ? 'Perlu latihan' : 'Perlu banyak latihan'
     const resultTone = accuracy >= 90 ? 'emerald' : accuracy >= 70 ? 'indigo' : accuracy >= 50 ? 'amber' : 'rose'
     return (
@@ -304,13 +320,20 @@ export default function QuizMode({ progress, onExit }) {
           {accuracy >= 90 ? 'Luar biasa!' : accuracy >= 70 ? 'Kerja bagus!' : accuracy >= 50 ? 'Terus berlatih!' : 'Jangan menyerah!'}
         </h2>
         <Card className="p-6 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700">
-          <div className="grid grid-cols-2 gap-4 text-left sm:grid-cols-4">
-            {[
+          <div className={`grid gap-4 text-left ${hasRetry ? 'grid-cols-2 sm:grid-cols-3' : 'grid-cols-2 sm:grid-cols-4'}`}>
+            {(hasRetry ? [
+              ['Soal', `${init}`, 'text-slate-900 dark:text-zinc-100'],
+              ['Benar (unik)', `${uniqBenar}/${init}`, 'text-emerald-700 dark:text-emerald-300'],
+              ['Salah', `${uniqSalah}`, 'text-red-700 dark:text-red-300'],
+              ['Akurasi percobaan', `${accuracy}%`, 'text-slate-900 dark:text-zinc-100'],
+              ['Combo terbaik', `x${bestCombo}`, 'text-amber-700 dark:text-amber-300'],
+              ['XP didapat', `+${xpEarned}`, 'text-slate-700 dark:text-zinc-300'],
+            ] : [
               ['Akurasi', `${accuracy}%`, 'text-emerald-700 dark:text-emerald-300'],
               ['Benar', `${correctCount}/${answered}`, 'text-slate-900 dark:text-zinc-100'],
               ['Combo terbaik', `x${bestCombo}`, 'text-amber-700 dark:text-amber-300'],
               ['XP didapat', `+${xpEarned}`, 'text-slate-700 dark:text-zinc-300'],
-            ].map(([l, v, c]) => (
+            ]).map(([l, v, c]) => (
               <div key={l} className="rounded-2xl border border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-700/50 p-3">
                 <div className="text-[10px] font-bold uppercase tracking-wide text-slate-600 dark:text-zinc-400">{l}</div>
                 <div className={`text-xl font-extrabold ${c}`}>{v}</div>
@@ -321,7 +344,7 @@ export default function QuizMode({ progress, onExit }) {
           {mistakes.length > 0 && (
             <div className="mt-5 text-left">
               <div className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-600 dark:text-zinc-400">
-                Perlu diulang ({mistakes.length})
+                Pernah salah ({mistakes.length})
               </div>
               <div className="flex flex-wrap gap-2">
                 {mistakes.map((m, i) => (
