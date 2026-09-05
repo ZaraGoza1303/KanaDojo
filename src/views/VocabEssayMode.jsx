@@ -45,11 +45,13 @@ export default function VocabEssayMode({ progress, onExit }){
   const uniqCorrectRef = useRef(new Set())
   const uniqWrongRef = useRef(new Set())
   const [showRomaji,setShowRomaji]=useState(()=>{ try{return localStorage.getItem('kd-show-romaji-essay')!=='0'}catch{return true}})
+  const inputRef = useRef(null)
 
   const current = queue[pos]
   const romaji = current ? kanaTextToRomaji(current.kana) : ''
 
   useEffect(()=>{ try{localStorage.setItem(ES_KEY, JSON.stringify({ids: queue.map(q=>q.id), pos, wrongIds: wrong.map(w=>w.id), input, feedback, stats, done}))}catch{} },[queue,pos,wrong,input,feedback,stats,done])
+  useEffect(()=>{ const t=setTimeout(()=> inputRef.current?.focus(), 50); return ()=> clearTimeout(t) },[pos, feedback])
 
   const submit = useCallback(()=>{
     if(!current || !input.trim() || feedback) return
@@ -95,6 +97,7 @@ export default function VocabEssayMode({ progress, onExit }){
         setWrong([])
         setInput('')
         setFeedback(null)
+        setTimeout(()=> inputRef.current?.focus(), 30)
       } else {
         setDone(true)
         try{localStorage.removeItem(ES_KEY)}catch{}
@@ -103,6 +106,7 @@ export default function VocabEssayMode({ progress, onExit }){
       setPos(p=>p+1)
       setInput('')
       setFeedback(null)
+      setTimeout(()=> inputRef.current?.focus(), 30)
     }
   },[pos,queue.length,wrong])
 
@@ -156,7 +160,7 @@ export default function VocabEssayMode({ progress, onExit }){
       </Card>
 
       <Card className="p-4 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700">
-        <input value={input} onChange={e=> setInput(e.target.value)} onKeyDown={e=>{ if(e.key==='Enter'){ e.preventDefault(); if(feedback) next(); else submit() } }} placeholder="ketik arti Indonesia..." className={`w-full rounded-2xl border px-5 py-4 text-center text-lg outline-none ${feedback==='correct' ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : feedback==='wrong' ? 'border-red-400 bg-red-50' : 'border-slate-300 bg-white dark:bg-zinc-700 text-slate-900 dark:text-white'}`} autoCapitalize="off" autoCorrect="off" spellCheck={false} autoFocus />
+        <input ref={inputRef} value={input} onChange={e=> setInput(e.target.value)} onKeyDown={e=>{ if(e.key==='Enter'){ e.preventDefault(); if(feedback) next(); else submit() } }} placeholder="ketik arti Indonesia..." className={`w-full rounded-2xl border px-5 py-4 text-center text-lg outline-none ${feedback==='correct' ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : feedback==='wrong' ? 'border-red-400 bg-red-50' : 'border-slate-300 bg-white dark:bg-zinc-700 text-slate-900 dark:text-white'}`} autoCapitalize="off" autoCorrect="off" spellCheck={false} autoFocus />
         {!feedback ? (
           <div className="mt-3 flex justify-center gap-2">
             <Button onClick={submit} disabled={!input.trim()}>Periksa</Button>
