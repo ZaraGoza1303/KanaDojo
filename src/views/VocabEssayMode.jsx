@@ -28,7 +28,12 @@ export default function VocabEssayMode({ progress, onExit }){
 
   const submit = useCallback(()=>{
     if(!current || !input.trim() || feedback) return
-    const ok = norm(input) === norm(current.arti)
+    const n = norm(input)
+    const cands = [current.arti, ...(current.alt||[])].map(norm)
+    let ok = cands.includes(n)
+    if(!ok){
+      for(const c of cands){ if(c.length>=4 && n.length>=4 && (c.includes(n) || n.includes(c))) { ok=true; break } }
+    }
     setFeedback(ok ? 'correct' : 'wrong')
     if(ok) uniqCorrectRef.current.add(current.id)
     else { uniqWrongRef.current.add(current.id); setWrong(w=> w.some(v=> v.id===current.id) ? w : [...w, current]) }
