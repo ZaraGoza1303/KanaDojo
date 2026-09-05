@@ -213,7 +213,7 @@ export default function QuizMode({ progress, onExit }) {
     } else {
       setCombo(0)
       setMistakes((m) => [...m, { kana, romaji, typed: timeout ? '(waktu habis!)' : answer.trim() }])
-      if(queue) setPendingWrong((p)=>[...p, [kana, romaji]])
+      if(queue) setPendingWrong((p)=> p.some(([k])=> k===kana) ? p : [...p, [kana, romaji]])
       progress.recordAnswer(false)
       progress.addXp(1)
       setFeedback('wrong')

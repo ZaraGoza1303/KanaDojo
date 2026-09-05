@@ -31,7 +31,7 @@ export default function VocabChoiceMode({ progress, onExit }){
     if(picked || !current) return
     const correct = arti===current.arti
     setPicked(arti)
-    if(!correct) setWrong(w=>[...w, current])
+    if(!correct) setWrong(w=> w.some(v=> v.id===current.id) ? w : [...w, current])
     const xp = correct? 10:2
     setStats(s=>({ total:s.total+1, correct:s.correct+(correct?1:0), xp:s.xp+xp }))
     try{ progress?.addXp?.(xp)}catch{}

@@ -234,7 +234,12 @@ export default function ComboMode({ progress, onExit }) {
     } else {
       setCombo(0)
       setMistakes((m) => [...m, { kana, romaji, typed: timeout ? '(waktu habis!)' : answer.trim() }])
-      if(queue) setPendingWrong((p)=>[...p, [kana, romaji, current[2], current[3]]])
+      if(queue){
+        setPendingWrong((p)=>{
+          if(p.some(([k])=> k===kana)) return p
+          return [...p, [kana, romaji, current[2], current[3]]]
+        })
+      }
       progress.recordAnswer(false)
       progress.addXp(1)
       setFeedback('wrong')

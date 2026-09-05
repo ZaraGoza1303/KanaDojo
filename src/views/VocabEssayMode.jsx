@@ -28,7 +28,7 @@ export default function VocabEssayMode({ progress, onExit }){
     if(!current || !input.trim() || feedback) return
     const ok = norm(input) === norm(current.arti)
     setFeedback(ok ? 'correct' : 'wrong')
-    if(!ok) setWrong(w=> [...w, current])
+    if(!ok) setWrong(w=> w.some(v=> v.id===current.id) ? w : [...w, current])
     const xp = ok ? 12 : 2
     setStats(s=> ({total:s.total+1, correct:s.correct+(ok?1:0), xp:s.xp+xp}))
     try{ progress?.addXp?.(xp)}catch{}
