@@ -42,15 +42,18 @@ export default function VocabEssayMode({ progress, onExit }){
   const [feedback,setFeedback]=useState(()=> _s?.feedback || null)
   const [stats,setStats]=useState(()=> _s?.stats || {total:0, correct:0, xp:0})
   const [done,setDone]=useState(()=> !!_s?.done)
-  const uniqCorrectRef = useRef(new Set())
-  const uniqWrongRef = useRef(new Set())
+  const uniqCorrectRef = useRef(new Set(_s?.uniqCorrect || []))
+  const uniqWrongRef = useRef(new Set(_s?.uniqWrong || []))
+  const initTotalRef = useRef(_s?.initTotal || 30)
+  const bestComboRef = useRef(_s?.bestCombo || 0)
+  const comboRef = useRef(0)
   const [showRomaji,setShowRomaji]=useState(()=>{ try{return localStorage.getItem('kd-show-romaji-essay')!=='0'}catch{return true}})
   const inputRef = useRef(null)
 
   const current = queue[pos]
   const romaji = current ? kanaTextToRomaji(current.kana) : ''
 
-  useEffect(()=>{ try{localStorage.setItem(ES_KEY, JSON.stringify({ids: queue.map(q=>q.id), pos, wrongIds: wrong.map(w=>w.id), input, feedback, stats, done}))}catch{} },[queue,pos,wrong,input,feedback,stats,done])
+  useEffect(()=>{ try{localStorage.setItem(ES_KEY, JSON.stringify({ids: queue.map(q=>q.id), pos, wrongIds: wrong.map(w=>w.id), input, feedback, stats, done, uniqCorrect:[...uniqCorrectRef.current], uniqWrong:[...uniqWrongRef.current], initTotal:initTotalRef.current, bestCombo:bestComboRef.current}))}catch{} },[queue,pos,wrong,input,feedback,stats,done])
   useEffect(()=>{ const t=setTimeout(()=> inputRef.current?.focus(), 50); return ()=> clearTimeout(t) },[pos, feedback])
 
   const submit = useCallback(()=>{
@@ -76,8 +79,8 @@ export default function VocabEssayMode({ progress, onExit }){
       }
     }
     setFeedback(ok ? 'correct' : 'wrong')
-    if(ok) uniqCorrectRef.current.add(current.id)
-    else { uniqWrongRef.current.add(current.id); setWrong(w=> w.some(v=> v.id===current.id) ? w : [...w, current]) }
+    if(ok){ uniqCorrectRef.current.add(current.id); comboRef.current+=1; bestComboRef.current=Math.max(bestComboRef.current, comboRef.current) }
+    else { uniqWrongRef.current.add(current.id); comboRef.current=0; setWrong(w=> w.some(v=> v.id===current.id) ? w : [...w, current]) }
     const xp = ok ? 12 : 2
     setStats(s=> ({total:s.total+1, correct:s.correct+(ok?1:0), xp:s.xp+xp}))
     try{ progress?.addXp?.(xp)}catch{}
@@ -124,18 +127,44 @@ export default function VocabEssayMode({ progress, onExit }){
   },[stats,progress,onExit])
 
   if(!VOCAB.length) return <Card className="p-8 text-center">Vocab kosong</Card>
-  if(done) return (
+  if(done){
+    const acc = stats.total ? Math.round((stats.correct/stats.total)*100) : 0
+    const init = initTotalRef.current || 30
+    const uniqBenar = uniqCorrectRef.current.size
+    const uniqSalah = uniqWrongRef.current.size
+    const hasRetry = init>0 && uniqSalah>0
+    return (
     <div className="mx-auto max-w-xl space-y-4 text-center">
       <Card className="p-8 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700">
         <p className="text-xl font-bold text-slate-900 dark:text-white">Selesai — semua benar! 🎉</p>
-        <p className="mt-2 text-sm text-slate-600 dark:text-zinc-400">{stats.total} soal · {stats.correct} benar · +{stats.xp} XP</p>
+        <div className={`mt-4 grid gap-4 text-left ${hasRetry ? 'grid-cols-2 sm:grid-cols-3' : 'grid-cols-2 sm:grid-cols-4'}`}>
+          {(hasRetry ? [
+            ['Soal', `${init}`, 'text-slate-900 dark:text-white'],
+            ['Benar (unik)', `${uniqBenar}/${init}`, 'text-emerald-700 dark:text-emerald-300'],
+            ['Salah', `${uniqSalah}`, 'text-red-600 dark:text-red-400'],
+            ['Akurasi percobaan', `${acc}%`, 'text-slate-900 dark:text-white'],
+            ['Combo terbaik', `x${bestComboRef.current}`, 'text-amber-700 dark:text-amber-300'],
+            ['XP', `+${stats.xp}`, 'text-slate-700 dark:text-zinc-300'],
+          ] : [
+            ['Akurasi', `${acc}%`, 'text-emerald-700 dark:text-emerald-300'],
+            ['Benar', `${stats.correct}/${stats.total}`, 'text-slate-900 dark:text-white'],
+            ['Combo terbaik', `x${bestComboRef.current}`, 'text-amber-700 dark:text-amber-300'],
+            ['XP', `+${stats.xp}`, 'text-slate-700 dark:text-zinc-300'],
+          ]).map(([l,v,c])=>(
+            <div key={l} className="rounded-2xl border border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-700/50 p-3">
+              <div className="text-[10px] font-bold uppercase tracking-wide text-slate-600 dark:text-zinc-400">{l}</div>
+              <div className={`text-xl font-extrabold ${c}`}>{v}</div>
+            </div>
+          ))}
+        </div>
         <div className="mt-4 flex justify-center gap-2">
-          <Button onClick={()=>{ setQueue(shuffle(VOCAB).slice(0,30)); setPos(0); setWrong([]); setInput(''); setFeedback(null); setStats({total:0,correct:0,xp:0}); setDone(false)}}>Main lagi</Button>
+          <Button onClick={()=>{ uniqCorrectRef.current=new Set(); uniqWrongRef.current=new Set(); comboRef.current=0; bestComboRef.current=0; setQueue(shuffle(VOCAB).slice(0,30)); setPos(0); setWrong([]); setInput(''); setFeedback(null); setStats({total:0,correct:0,xp:0}); setDone(false)}}>Main lagi</Button>
           <Button variant="ghost" onClick={onExit}>Beranda</Button>
         </div>
       </Card>
     </div>
-  )
+    )
+  }
   if(!current) return <Card className="p-8 text-center">Vocab kosong</Card>
 
   return (
