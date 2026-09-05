@@ -49,7 +49,14 @@ export default function MultiplayerGame({ config, progress, onExit, multiplayer 
     return shuffleWithSeed(base, seed)
   }, [seed, dakuten])
 
-  const comboPool = useMemo(() => shuffleWithSeed(COMBO_LETTERS, seed + ':combo'), [seed])
+  const comboPool = useMemo(() => {
+    let pool = COMBO_LETTERS
+    if(!dakuten){
+      const dakutenRe = /[がぎぐげござじずぜぞだぢづでどばびぶべぼぱぴぷぺぽガギグゲゴザジズゼゾダヂヅデドバビブベボパピプペポヴぎゃぎゅぎょじゃじゅじょびゃびゅびょぴゃぴゅぴょギャギュギョジャジュジョビャビュビョピャピュピョ]/
+      pool = pool.filter(([k])=> !dakutenRe.test(k))
+    }
+    return shuffleWithSeed(pool, seed + ':combo')
+  }, [seed, dakuten])
   const vocabPool = useMemo(() => shuffleWithSeed(VOCAB, seed + ':vocab'), [seed])
 
   const translateIndices = useMemo(() => {
