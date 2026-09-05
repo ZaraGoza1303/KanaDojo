@@ -11,26 +11,29 @@ const GRADE = [
   { v: 4, label: 'Easy', sub: '4d', tone: 'cyan', xp: 8 },
 ]
 
-function shuffle(arr) {
-  const a = [...arr]
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1))
-    ;[a[i], a[j]] = [a[j], a[i]]
-  }
-  return a
-}
-
 export default function AnkiMode({ progress, onExit }) {
   const [srsMap, setSrsMap] = useState(() => loadSRS())
   const [flipped, setFlipped] = useState(false)
   const [history, setHistory] = useState([])
   const [stats, setStats] = useState({ reviewed: 0, correct: 0, xp: 0 })
+  const [reviewAhead, setReviewAhead] = useState(false)
+  const [newOrder] = useState(() => {
+    const a = [...VOCAB]
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1))
+      ;[a[i], a[j]] = [a[j], a[i]]
+    }
+    const m = new Map()
+    a.forEach((v, i) => m.set(v.id, i))
+    return m
+  })
 
   const queue = useMemo(() => {
     const q = getQueue(VOCAB, srsMap)
-    return { ...q, newCards: shuffle(q.newCards) }
-  }, [srsMap])
-  const current = queue.due[0] || queue.newCards[0] || queue.upcoming[0] || null
+    q.newCards.sort((a, b) => (newOrder.get(a.id) ?? 0) - (newOrder.get(b.id) ?? 0))
+    return q
+  }, [srsMap, newOrder])
+  const current = queue.due[0] || queue.newCards[0] || (reviewAhead ? queue.upcoming[0] : null) || null
   const isNew = current ? !srsMap.has(current.id) : false
 
   const doGrade = useCallback((grade) => {
@@ -83,6 +86,7 @@ export default function AnkiMode({ progress, onExit }) {
     setHistory([])
     setStats({ reviewed: 0, correct: 0, xp: 0 })
     setFlipped(false)
+    setReviewAhead(false)
   }, [])
 
   const handleExit = useCallback(() => {
@@ -131,6 +135,12 @@ export default function AnkiMode({ progress, onExit }) {
   const studied = total - queue.newCards.length
   const romaji = current ? kanaTextToRomaji(current.kana) : ''
   const contohRomaji = current?.contoh_kana ? kanaTextToRomaji(current.contoh_kana) : ''
+  const upcomingDueMs = queue.upcoming.length ? Math.min(...queue.upcoming.map((c) => c._s.due)) - Date.now() : 0
+  const upcomingMin = Math.max(1, Math.ceil(upcomingDueMs / 60000))
+
+  useEffect(() => {
+    if (queue.due.length > 0 || queue.newCards.length > 0) setReviewAhead(false)
+  }, [queue.due.length, queue.newCards.length])
 
   if (!current) {
     return (
@@ -141,8 +151,13 @@ export default function AnkiMode({ progress, onExit }) {
         </div>
         <Card className="p-8 text-center bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700">
           <p className="text-lg font-bold text-slate-900 dark:text-white">Selesai — semua kartu sudah dijadwalkan</p>
-          <p className="mt-2 text-sm text-slate-600 dark:text-zinc-400">Due: {queue.due.length} · Baru: {queue.newCards.length} · Upcoming: {queue.upcoming.length}</p>
+          {queue.upcoming.length > 0 ? (
+            <p className="mt-2 text-sm text-slate-600 dark:text-zinc-400">{queue.upcoming.length} kartu due dalam {upcomingMin} menit</p>
+          ) : (
+            <p className="mt-2 text-sm text-slate-600 dark:text-zinc-400">Due: {queue.due.length} · Baru: {queue.newCards.length} · Upcoming: {queue.upcoming.length}</p>
+          )}
           <div className="mt-4 flex justify-center gap-2">
+            {queue.upcoming.length > 0 && <Button onClick={() => setReviewAhead(true)}>Review ahead</Button>}
             <Button variant="ghost" onClick={doReset}>Reset deck</Button>
             <Button onClick={handleExit}>Beranda</Button>
           </div>
@@ -150,9 +165,6 @@ export default function AnkiMode({ progress, onExit }) {
       </div>
     )
   }
-
-  const upcomingDueMs = queue.upcoming.length ? Math.min(...queue.upcoming.map((c) => c._s.due)) - Date.now() : 0
-  const upcomingMin = Math.max(1, Math.ceil(upcomingDueMs / 60000))
 
   return (
     <div className="mx-auto max-w-xl space-y-4">
@@ -233,11 +245,6 @@ export default function AnkiMode({ progress, onExit }) {
         <Button variant="ghost" onClick={handleExit} className="px-3 py-2 text-xs">Beranda</Button>
       </div>
 
-      {queue.due.length === 0 && queue.newCards.length === 0 && queue.upcoming.length > 0 && (
-        <p className="text-center text-xs text-slate-600 dark:text-zinc-400">
-          Selesai — {queue.upcoming.length} kartu due dalam {upcomingMin} menit
-        </p>
-      )}
       <p className="text-center text-xs text-slate-500 dark:text-zinc-500">Due {queue.due.length} · Baru {queue.newCards.length} · Upcoming {queue.upcoming.length} · Tap kartu / Space flip · 1-4 grade</p>
     </div>
   )

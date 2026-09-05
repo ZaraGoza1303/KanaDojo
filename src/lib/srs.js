@@ -12,7 +12,7 @@ export function schedule(state, grade){
 }
 export function getQueue(vocab, srsMap, now=Date.now()){
   const due=[], newCards=[], upcoming=[]
-  for(const v of vocab){ const s=srsMap.get(v.id); if(!s) newCards.push(v); else if(s.due<=now) due.push({...v,_s:s}); else upcoming.push({...v,_s:s})}
+  for(const v of vocab){ const s=srsMap.get(v.id); if(!s) newCards.push(v); else if(!Number.isFinite(s.due) || s.due<=now) due.push({...v,_s:s}); else upcoming.push({...v,_s:s})}
   due.sort((a,b)=>a._s.due-b._s.due)
   return {due, newCards, upcoming}
 }
