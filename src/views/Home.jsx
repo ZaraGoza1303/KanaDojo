@@ -13,19 +13,24 @@ const MODES = [
 ]
 
 export default function Home({ progress, onNavigate }) {
-  const [showAll, setShowAll] = React.useState(false)
-  const visibleModes = showAll ? MODES : MODES.slice(0, 3)
+  const visibleModes = MODES.filter((m) => m.id !== 'lobby')
   const maxDayXp = Math.max(10, ...progress.last7.map((d) => d.xp))
   return (
     <div className="space-y-8">
       <section className="animate-rise">
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-3xl">
-          Selamat datang siap latihan hari ini?
-          {progress.streakDays > 1 && <Badge tone="amber" className="ml-2 align-middle">Streak {progress.streakDays} hari</Badge>}
-        </h1>
-        <p className="mt-2 max-w-2xl text-sm text-slate-600 dark:text-zinc-400 sm:text-base">
-          Kuasai membaca hiragana & katakana lewat latihan terstruktur.
-        </p>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-3xl">
+              Selamat datang siap latihan hari ini?
+            </h1>
+            <p className="mt-2 max-w-2xl text-sm text-slate-600 dark:text-zinc-400 sm:text-base">
+              Kuasai membaca hiragana & katakana lewat latihan terstruktur.
+            </p>
+          </div>
+          <Button onClick={() => onNavigate('lobby')} className="shrink-0 rounded-xl bg-zinc-900 px-5 py-3 text-sm font-bold text-white shadow-md hover:bg-black dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-100">
+            Multiplayer →
+          </Button>
+        </div>
       </section>
 
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -40,13 +45,6 @@ export default function Home({ progress, onNavigate }) {
           </button>
         ))}
       </section>
-      {MODES.length > 3 && (
-        <div className="text-center">
-          <button onClick={() => setShowAll((v) => !v)} className="rounded-full border border-slate-200 bg-white px-5 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700">
-            {showAll ? 'Sembunyikan' : `Lihat mode lebih banyak (${MODES.length - 3} lagi)`}
-          </button>
-        </div>
-      )}
 
       <section className="space-y-4">
         <h2 className="text-sm font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-400">Progress kamu</h2>
