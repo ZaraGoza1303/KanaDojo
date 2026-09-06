@@ -149,12 +149,36 @@ export default function MultiplayerGame({ config, progress, onExit, multiplayer 
   useEffect(() => {
     if (phase !== 'play' || !challenge || feedback || !currentEntry) return
     if (timeLeft <= 0) {
+      if (mode === 'vocab') {
+        const kanaDisp = getKanaDisplay(currentEntry)
+        bumpAnswered()
+        setMistakes((m) => [...m, { kana: kanaDisp, romaji: expected, typed: '(waktu habis)' }])
+        try { progress.recordAnswer(false) } catch {}
+        try { progress.addXp(1) } catch {}
+        setCombo(0)
+        setVocabPick('__timeout__')
+        setFeedback('wrong')
+        playWrong()
+        sendBoth({ type: 'answer', index: idx, accuracy: 0, correct: false, time: Date.now() })
+        setTimeout(() => {
+          if (answeredRef.current >= total) finishGame()
+          else {
+            setVocabPick(null)
+            setFeedback(null)
+            setHintReveal(0)
+            setHintUsed(false)
+            setTimeLeft(challengeSeconds)
+            setIdx((i) => i + 1)
+          }
+        }, 900)
+        return
+      }
       handleSubmit(true)
       return
     }
     const t = setTimeout(() => setTimeLeft((s) => s - 1), 1000)
     return () => clearTimeout(t)
-  }, [phase, challenge, timeLeft, feedback, currentEntry])
+  }, [phase, challenge, timeLeft, feedback, currentEntry, mode, expected, getKanaDisplay, progress, idx, total, finishGame, challengeSeconds])
 
   const sendBoth = (data) => { const payload={...data, _sender: clientIdRef.current}; try{ multiplayer?.send?.(payload) }catch{}; try{ if(roomCode) sendViaRelay(roomCode, payload) }catch{} }
   useEffect(() => {
@@ -590,7 +614,7 @@ export default function MultiplayerGame({ config, progress, onExit, multiplayer 
             </div>
           )}
 
-          <p className="mt-4 text-center text-xs text-slate-600 dark:text-slate-500">Soal ke {answered + 1}{length !== 0 && ` dari ${length}`} · Tekan Enter untuk menjawab</p>
+          <p className="mt-4 text-center text-xs text-slate-600 dark:text-slate-500">Soal ke {answered + 1}{length !== 0 && ` dari ${length}`} · {mode==='vocab' ? 'Tap pilihan' : 'Tekan Enter untuk menjawab'}</p>
         </Card>
 
         <div className="space-y-4">
