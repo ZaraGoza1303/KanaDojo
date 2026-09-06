@@ -98,7 +98,7 @@ export default function VocabChoiceMode({ progress, onExit }){
     const hasRetry = init>0 && uniqSalah>0
     return (
     <div className="mx-auto max-w-xl space-y-5 text-center">
-      <p className="text-xl font-bold text-slate-900 dark:text-white">Selesai — semua benar! 🎉</p>
+      <p className="text-xl font-bold text-slate-900 dark:text-white">Selesai, semua benar! 🎉</p>
       <Card className="p-6 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700">
         <div className={`grid gap-4 text-left ${hasRetry ? 'grid-cols-2 sm:grid-cols-3' : 'grid-cols-2 sm:grid-cols-4'}`}>
           {(hasRetry ? [

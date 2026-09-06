@@ -168,7 +168,7 @@ export default function AnkiMode({ progress, onExit }) {
           <Badge tone="emerald">Selesai</Badge>
         </div>
         <Card className="p-8 text-center bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700">
-          <p className="text-lg font-bold text-slate-900 dark:text-white">Selesai — semua kartu sudah dijadwalkan</p>
+          <p className="text-lg font-bold text-slate-900 dark:text-white">Selesai, semua kartu sudah dijadwalkan</p>
           {queue.upcoming.length > 0 ? (
             <p className="mt-2 text-sm text-slate-600 dark:text-zinc-400">{queue.upcoming.length} kartu due dalam {upcomingMin} menit</p>
           ) : (
@@ -212,7 +212,7 @@ export default function AnkiMode({ progress, onExit }) {
           <span className="select-none text-5xl font-extrabold leading-none text-slate-900 dark:text-white sm:text-6xl">{current.kana}</span>
           {!flipped ? (
             <>
-              <span className="rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white dark:bg-white dark:text-zinc-900">Lihat Arti — tap / Space</span>
+              <span className="rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white dark:bg-white dark:text-zinc-900">Lihat Arti, tap / Space</span>
               <span className="text-xs text-slate-500 dark:text-zinc-400">Tekan Space untuk flip · 1-4 untuk grade setelah flip</span>
             </>
           ) : (

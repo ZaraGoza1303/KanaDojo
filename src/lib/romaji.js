@@ -295,7 +295,7 @@ export function kanaTextToWordSegments(text) {
 
 /**
  * Versi kanaTokenToRomaji yang mencatat indeks kana pemilik setiap huruf
- * output — dipakai untuk highlight kana per huruf.
+ * output, dipakai untuk highlight kana per huruf.
  */
 function traceKanaToken(token) {
   const out = []
@@ -354,7 +354,7 @@ function traceKanaToken(token) {
  * Diff jawaban user terhadap jawaban yang dipecah per-kata kana.
  * Perbandingan karakter tetap memakai romaji utuh ternormalisasi (sama dengan
  * yang dipakai penilaian), lalu setiap karakter dipetakan ke kata kana-nya
- * lewat penyelarasan LCS antara gabungan per-kata vs romaji utuh — karena
+ * lewat penyelarasan LCS antara gabungan per-kata vs romaji utuh, karena
  * normalisasi bisa menyatukan vokal antar kata (…no + ongaku… → …no…).
  * Mengembalikan { wordStatus, charDiff, kanaCharStatus }:
  * - wordStatus[wi]     : 'ok' | 'wrong' untuk tiap kata

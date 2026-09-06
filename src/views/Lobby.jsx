@@ -23,7 +23,7 @@ export default function Lobby({ onStartGame, onBack, initialRoomCode }) {
 
   useEffect(() => {
     return () => {
-      // Jangan destroy kalau lobby unmount karena game dimulai —
+      // Jangan destroy kalau lobby unmount karena game dimulai, karena
       // koneksi dipindah ke MultiplayerGame via registry aktif.
       if (!startedRef.current) { try { mpRef.current?.destroy() } catch {} }
     }
@@ -56,7 +56,7 @@ export default function Lobby({ onStartGame, onBack, initialRoomCode }) {
         console.error('host err',err?.type,err?.message,err)
         if(err?.type==='unavailable-id'){
           setHostStatus('error')
-          setJoinError(`Kode ${code} sudah dipakai — buat ulang.`)
+          setJoinError(`Kode ${code} sudah dipakai, buat ulang.`)
         } else if(err?.type==='network' || err?.type==='server-error' || err?.type==='socket-error'){
           setHostStatus('error')
           setJoinError(`Host gagal konek ke PeerJS (${err.type}). Cek internet & refresh.`)

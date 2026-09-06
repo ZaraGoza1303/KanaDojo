@@ -325,7 +325,7 @@ export default function MultiplayerGame({ config, progress, onExit, multiplayer 
     }
   }, [feedback, currentEntry, answer, expected, bumpAnswered, idx, combo, mode, challenge, hintUsed, progress, getKanaDisplay, total, finishGame, challengeSeconds, multiplayer])
 
-  // Timer challenge — harus didefinisikan SETELAH handleSubmit & finishGame
+  // Timer challenge, harus didefinisikan SETELAH handleSubmit & finishGame
   useEffect(() => {
     if (phase !== 'play' || !challenge || feedback || !currentEntry) return
     if (timeLeft <= 0) {

@@ -8,7 +8,7 @@ const MODES = [
   { id: 'translate', title: 'Mode Translate', desc: 'Baca teks panjang, tulis romaji-nya. Akurasi, waktu & highlight kesalahan.', tags: ['Cerita & Dialog', `${TEXTS.length} teks`, 'Endless'] },
   { id: 'quiz', title: 'Tes Huruf', desc: 'Kuis cepat 1 huruf: hiragana, katakana, atau campur. Streak & combo.', tags: ['20-30 soal', 'Filter kana', 'Endless & Challenge'] },
   { id: 'combo', title: 'Kombinasi & Extended', desc: `${EXTENDED_KANA.length} kombinasi sulit plus mode Kata Serapan.`, tags: [`${LOANWORDS.length} kata serapan`, 'Yoon', 'Challenge'] },
-  { id: 'vocab', title: 'Mode Kosakata', desc: 'Tebak arti kosakata N5-N4 — pilih Anki flip atau Pilihan Ganda', tags: ['300 kata', '2 mode', 'N5-N4'] },
+  { id: 'vocab', title: 'Mode Kosakata', desc: 'Tebak arti kosakata N5-N4, pilih Anki flip atau Pilihan Ganda', tags: ['300 kata', '2 mode', 'N5-N4'] },
   { id: 'lobby', title: 'Multiplayer Online', desc: 'Tanding realtime 1v1 semua mode via room code', tags: ['Realtime', 'Room Code', 'Semua Mode'] },
 ]
 

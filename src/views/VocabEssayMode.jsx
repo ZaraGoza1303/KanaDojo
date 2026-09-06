@@ -136,7 +136,7 @@ export default function VocabEssayMode({ progress, onExit }){
     return (
     <div className="mx-auto max-w-xl space-y-4 text-center">
       <Card className="p-8 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700">
-        <p className="text-xl font-bold text-slate-900 dark:text-white">Selesai — semua benar! 🎉</p>
+        <p className="text-xl font-bold text-slate-900 dark:text-white">Selesai, semua benar! 🎉</p>
         <div className={`mt-4 grid gap-4 text-left ${hasRetry ? 'grid-cols-2 sm:grid-cols-3' : 'grid-cols-2 sm:grid-cols-4'}`}>
           {(hasRetry ? [
             ['Soal', `${init}`, 'text-slate-900 dark:text-white'],
@@ -197,7 +197,7 @@ export default function VocabEssayMode({ progress, onExit }){
           </div>
         ) : (
           <div className="mt-3 text-center space-y-2">
-            <p className={`text-sm font-bold ${feedback==='correct' ? 'text-emerald-700' : 'text-red-600'}`}>{feedback==='correct' ? 'Benar! 🎉' : `Salah — jawaban: ${current.arti}${current.alt?.length ? ' (juga: ' + current.alt.join(' / ') + ')' : ''}`}</p>
+            <p className={`text-sm font-bold ${feedback==='correct' ? 'text-emerald-700' : 'text-red-600'}`}>{feedback==='correct' ? 'Benar! 🎉' : `Salah, jawaban: ${current.arti}${current.alt?.length ? ' (juga: ' + current.alt.join(' / ') + ')' : ''}`}</p>
             <div className="flex justify-center gap-2">
               <Button onClick={next}>{pos>=queue.length-1 && wrong.length>0 ? 'Ulangi yang salah →' : pos>=queue.length-1 ? 'Selesai →' : 'Lanjut →'}</Button>
             </div>
