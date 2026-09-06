@@ -1,4 +1,7 @@
-import Peer from 'peerjs'
+const getPeerConstructor = () => {
+  if (typeof window !== 'undefined' && window.Peer) return window.Peer
+  return null
+}
 
 // Koneksi harus survive perpindahan view (Lobby -> MultiplayerGame),
 // jadi instance aktif disimpan di level module, bukan di state komponen.
@@ -37,7 +40,9 @@ export function createMultiplayer({ onData, onPeerJoin, onPeerLeave, onError } =
   ], iceTransportPolicy:'all', sdpSemantics:'unified-plan', iceCandidatePoolSize:10 } }
   function host(code) {
     const id = `kanadojo-${code}`
-    peer = new Peer(id, PEER_CFG)
+    const PeerCtor = getPeerConstructor()
+    if (!PeerCtor) throw new Error('PeerJS not loaded')
+    peer = new PeerCtor(id, PEER_CFG)
     peer.on('open', (pid)=> console.log('peer open host',pid))
     peer.on('connection', c => {
       console.log('host incoming',c.peer)
@@ -53,7 +58,9 @@ export function createMultiplayer({ onData, onPeerJoin, onPeerLeave, onError } =
     return peer
   }
   function join(hostCode) {
-    peer = new Peer(undefined, PEER_CFG)
+    const PeerCtor = getPeerConstructor()
+    if (!PeerCtor) throw new Error('PeerJS not loaded')
+    peer = new PeerCtor(undefined, PEER_CFG)
     peer.on('open', (pid) => {
       console.log('join peer open',pid,'connecting to',`kanadojo-${hostCode}`)
       const c = peer.connect(`kanadojo-${hostCode}`, { reliable: true })

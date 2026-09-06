@@ -4,9 +4,9 @@ import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  optimizeDeps: { exclude: ['peerjs'] },
+  build: { commonjsOptions: { include: [/peerjs/, /node_modules/] } },
   server: {
-    // buat ngrok — uncomment kalau mau pakai:
-    // allowedHosts: ['.ngrok-free.dev', '.ngrok-free.app', '.ngrok.io'],
     allowedHosts: true,
   },
 })
