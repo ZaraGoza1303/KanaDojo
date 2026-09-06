@@ -146,40 +146,6 @@ export default function MultiplayerGame({ config, progress, onExit, multiplayer 
     return () => clearTimeout(id)
   }, [idx, phase])
 
-  useEffect(() => {
-    if (phase !== 'play' || !challenge || feedback || !currentEntry) return
-    if (timeLeft <= 0) {
-      if (mode === 'vocab') {
-        const kanaDisp = getKanaDisplay(currentEntry)
-        bumpAnswered()
-        setMistakes((m) => [...m, { kana: kanaDisp, romaji: expected, typed: '(waktu habis)' }])
-        try { progress.recordAnswer(false) } catch {}
-        try { progress.addXp(1) } catch {}
-        setCombo(0)
-        setVocabPick('__timeout__')
-        setFeedback('wrong')
-        playWrong()
-        sendBoth({ type: 'answer', index: idx, accuracy: 0, correct: false, time: Date.now() })
-        setTimeout(() => {
-          if (answeredRef.current >= total) finishGame()
-          else {
-            setVocabPick(null)
-            setFeedback(null)
-            setHintReveal(0)
-            setHintUsed(false)
-            setTimeLeft(challengeSeconds)
-            setIdx((i) => i + 1)
-          }
-        }, 900)
-        return
-      }
-      handleSubmit(true)
-      return
-    }
-    const t = setTimeout(() => setTimeLeft((s) => s - 1), 1000)
-    return () => clearTimeout(t)
-  }, [phase, challenge, timeLeft, feedback, currentEntry, mode, expected, getKanaDisplay, progress, idx, total, finishGame, challengeSeconds])
-
   const sendBoth = (data) => { const payload={...data, _sender: clientIdRef.current}; try{ multiplayer?.send?.(payload) }catch{}; try{ if(roomCode) sendViaRelay(roomCode, payload) }catch{} }
   useEffect(() => {
     if (!multiplayer && !roomCode) return
@@ -358,6 +324,41 @@ export default function MultiplayerGame({ config, progress, onExit, multiplayer 
       }
     }
   }, [feedback, currentEntry, answer, expected, bumpAnswered, idx, combo, mode, challenge, hintUsed, progress, getKanaDisplay, total, finishGame, challengeSeconds, multiplayer])
+
+  // Timer challenge — harus didefinisikan SETELAH handleSubmit & finishGame
+  useEffect(() => {
+    if (phase !== 'play' || !challenge || feedback || !currentEntry) return
+    if (timeLeft <= 0) {
+      if (mode === 'vocab') {
+        const kanaDisp = getKanaDisplay(currentEntry)
+        bumpAnswered()
+        setMistakes((m) => [...m, { kana: kanaDisp, romaji: expected, typed: '(waktu habis)' }])
+        try { progress.recordAnswer(false) } catch {}
+        try { progress.addXp(1) } catch {}
+        setCombo(0)
+        setVocabPick('__timeout__')
+        setFeedback('wrong')
+        playWrong()
+        sendBoth({ type: 'answer', index: idx, accuracy: 0, correct: false, time: Date.now() })
+        setTimeout(() => {
+          if (answeredRef.current >= total) finishGame()
+          else {
+            setVocabPick(null)
+            setFeedback(null)
+            setHintReveal(0)
+            setHintUsed(false)
+            setTimeLeft(challengeSeconds)
+            setIdx((i) => i + 1)
+          }
+        }, 900)
+        return
+      }
+      handleSubmit(true)
+      return
+    }
+    const t = setTimeout(() => setTimeLeft((s) => s - 1), 1000)
+    return () => clearTimeout(t)
+  }, [phase, challenge, timeLeft, feedback, currentEntry, mode, expected, getKanaDisplay, progress, idx, total, finishGame, challengeSeconds])
 
   const handleKey = (e) => {
     if (e.key !== 'Enter') return
