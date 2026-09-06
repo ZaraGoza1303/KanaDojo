@@ -134,6 +134,18 @@ export default function Lobby({ onStartGame, onBack, initialRoomCode }) {
     setActiveMultiplayer(mp)
     let relayMp=null
     let relayStop=null
+    let relayPollStarted=false
+    const ensureRelayPoll = () => {
+      if(relayPollStarted) return
+      relayPollStarted=true
+      relayStop = pollRelay(code, (data)=>{
+        if(!data || data._sender===lobbyIdRef.current) return
+        if(data.type==='settings'){ if(data.settings) setSettings(data.settings); if(data.seed) seedRef.current=data.seed }
+        if(data.type==='host-ready'){ setJoinStatus('connected'); setJoinError(''); try{ sendViaRelay(code,{type:'relay-join', _sender: lobbyIdRef.current}) }catch{} }
+        if(data.type==='start'){ if(startedRef.current) return; startedRef.current=true; onStartGame({ roomCode:code, seed:data.seed||seedRef.current, settings:data.settings||settings, isHost:false }) }
+      }, {since: Date.now() - 60000})
+    }
+    ensureRelayPoll()
     const tryRelay = () => {
       console.log('fallback to relay',code)
       setJoinStatus('connecting')
