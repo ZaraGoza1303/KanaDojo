@@ -509,7 +509,7 @@ export default function MultiplayerGame({ config, progress, onExit, multiplayer 
     )
   }
 
-  if (!currentEntry) return null
+  if (!currentEntry) return <div className="mx-auto max-w-xl p-8 text-center text-slate-600 dark:text-zinc-400">Memuat soal... Room {roomCode} Mode {mode} Seed {String(seed).slice(0,8)}</div>
   const kanaDisp = getKanaDisplay(currentEntry)
   const isTranslate = mode === 'translate'
   const hintPrefix = hintReveal > 0 ? expected.replace(/ /g, '').slice(0, hintReveal) : null
