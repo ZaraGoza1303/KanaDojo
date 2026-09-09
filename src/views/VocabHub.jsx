@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { VOCAB_COUNT } from '../data/vocabAll.js'
 import { Card, Button, Badge } from '../components/ui.jsx'
 import AnkiMode from './AnkiMode.jsx'
 import VocabChoiceMode from './VocabChoiceMode.jsx'
@@ -16,7 +17,7 @@ export default function VocabHub({ progress, onExit }){
       <div className="flex items-center gap-2">
         <Button variant="ghost" onClick={onExit} className="px-3 py-2 text-xs">Beranda</Button>
         <Badge tone="indigo">Mode Kosakata</Badge>
-        <Badge tone="slate">300 kata N5-N4</Badge>
+        <Badge tone="slate">{VOCAB_COUNT} kata N5-N4</Badge>
       </div>
       <div className="text-center">
         <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Pilih mode belajar</h2>
@@ -42,7 +43,7 @@ export default function VocabHub({ progress, onExit }){
           <span className="mt-4 inline-block text-xs font-semibold text-slate-900 dark:text-white">Mulai →</span>
         </button>
       </div>
-      <Card className="p-4 text-center text-xs text-slate-500 dark:text-zinc-400">300 kata N5-N4 • progresso & XP tetap tercatat</Card>
+      <Card className="p-4 text-center text-xs text-slate-500 dark:text-zinc-400">{VOCAB_COUNT} kata N5-N4 • Hari/Angka/Bulan/Tanggal • progreso & XP tetap tercatat</Card>
     </div>
   )
 }

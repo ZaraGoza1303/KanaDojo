@@ -6,6 +6,7 @@ import TranslateMode from './views/TranslateMode.jsx'
 import QuizMode from './views/QuizMode.jsx'
 import ComboMode from './views/ComboMode.jsx'
 import VocabHub from './views/VocabHub.jsx'
+import ExamMode from './views/ExamMode.jsx'
 import Lobby from './views/Lobby.jsx'
 import MultiplayerGame from './views/MultiplayerGame.jsx'
 import { getActiveMultiplayer } from './lib/multiplayer.js'
@@ -17,7 +18,7 @@ export default function App() {
       const params=new URLSearchParams(window.location.search)
       if(params.get('room')) return 'lobby'
       const v=localStorage.getItem(APP_VIEW_KEY)
-      if(v && ['translate','quiz','combo','vocab','lobby','multiplayer'].includes(v)) return v
+      if(v && ['translate','quiz','combo','vocab','exam','lobby','multiplayer'].includes(v)) return v
     }catch{}
     return 'home'
   })
@@ -73,6 +74,7 @@ export default function App() {
         {view === 'quiz' && <QuizMode progress={progress} onExit={goHome} />}
         {view === 'combo' && <ComboMode progress={progress} onExit={goHome} />}
         {view === 'vocab' && <VocabHub progress={progress} onExit={goHome} />}
+        {view === 'exam' && <ExamMode progress={progress} onExit={goHome} />}
         {view === 'lobby' && <Lobby onStartGame={handleStartGame} onBack={goHome} initialRoomCode={initialRoomCode} />}
         {view === 'multiplayer' && (
           <MultiplayerGame config={multiplayerConfig} progress={progress} onExit={goHome} multiplayer={getActiveMultiplayer()} />

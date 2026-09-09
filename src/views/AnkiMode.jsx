@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useCallback } from 'react'
-import { VOCAB } from '../data/vocab.js'
+import { VOCAB_ALL as VOCAB } from '../data/vocabAll.js'
 import { loadSRS, saveSRS, schedule, getQueue } from '../lib/srs.js'
 import { kanaTextToRomaji, extractKana } from '../lib/romaji.js'
 import { Card, Button, Badge } from '../components/ui.jsx'
