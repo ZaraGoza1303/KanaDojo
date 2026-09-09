@@ -9,7 +9,7 @@ const MODES = [
   { id: 'quiz', title: 'Tes Huruf', desc: 'Kuis cepat 1 huruf: hiragana, katakana, atau campur. Streak & combo.', tags: ['20-30 soal', 'Filter kana', 'Endless & Challenge'] },
   { id: 'combo', title: 'Kombinasi & Extended', desc: `${EXTENDED_KANA.length} kombinasi sulit plus mode Kata Serapan.`, tags: [`${LOANWORDS.length} kata serapan`, 'Yoon', 'Challenge'] },
   { id: 'vocab', title: 'Mode Kosakata', desc: 'Tebak arti kosakata N5-N4, pilih Anki flip atau Pilihan Ganda', tags: ['370 kata', '3 mode', 'N5-N4'] },
-  { id: 'exam', title: 'Ujian N5-N4', desc: 'Ujian 30 soal acak dari 150 bank: literal, melengkapi, susun kata, inferensial.', tags: ['30 soal', 'Acak stratifikasi', 'Tanpa timer'] },
+  { id: 'exam', title: 'Ujian N5-N4', desc: 'Ujian 30 soal acak: pilihan ganda, melengkapi teks, susun kata, dan pemahaman bacaan.', tags: ['30 soal', 'Soal acak', 'Tanpa timer'] },
   { id: 'lobby', title: 'Multiplayer Online', desc: 'Tanding realtime 1v1 semua mode via room code', tags: ['Realtime', 'Room Code', 'Semua Mode'] },
 ]
 

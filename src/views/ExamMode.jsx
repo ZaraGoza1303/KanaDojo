@@ -124,11 +124,11 @@ export default function ExamMode({ progress, onExit }) {
         <div className="flex items-center gap-3">
           <Button variant="ghost" onClick={onExit} className="px-3 py-2 text-xs">Beranda</Button>
           <Badge tone="emerald">Ujian</Badge>
-          <Badge tone="slate">150 bank • acak 30</Badge>
+          <Badge tone="slate">30 soal acak</Badge>
         </div>
         <Card className="space-y-4 p-6 sm:p-8 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700">
           <h2 className="text-xl font-extrabold text-slate-900 dark:text-white">Mode Ujian N5-N4</h2>
-          <p className="text-sm text-slate-600 dark:text-zinc-400">Tiap mulai: acak stratifikasi dari 150 bank — bukan urut 1-30. Tanpa timer, santai.</p>
+          <p className="text-sm text-slate-600 dark:text-zinc-400">30 soal acak setiap putaran: pilihan ganda, melengkapi teks, susun kata, dan pemahaman bacaan. Santai, tanpa timer.</p>
           <div className="grid grid-cols-2 gap-2 text-xs">
             {[['Literal (tersurat)', '10 soal'], ['Melengkapi teks', '8 soal'], ['Susun kata SOP', '6 soal'], ['Inferensial + negasi/lampau', '6 soal']].map(([a, b]) => (
               <div key={a} className="rounded-xl border border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-700/50 p-3">
@@ -153,7 +153,7 @@ export default function ExamMode({ progress, onExit }) {
         <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white">{lulus ? 'Otsukare! Kerja bagus!' : 'Jangan menyerah, coba lagi!'}</h2>
         <Card className="p-6 text-left bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {[['Skor', `${score}%`], ['Benar', `${stats.correct}/${total}`], ['XP', `+${stats.xp}`], ['Bank', `${EXAM_BANK.length} soal`]].map(([l, v]) => (
+            {[['Skor', `${score}%`], ['Benar', `${stats.correct}/${total}`], ['XP', `+${stats.xp}`], ['Soal', `${total}`]].map(([l, v]) => (
               <div key={l} className="rounded-2xl border border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-700/50 p-3">
                 <div className="text-[10px] font-bold uppercase tracking-wide text-slate-600 dark:text-zinc-400">{l}</div>
                 <div className="text-xl font-extrabold text-slate-900 dark:text-white">{v}</div>
@@ -240,7 +240,7 @@ export default function ExamMode({ progress, onExit }) {
           </div>
         )}
       </Card>
-      <p className="text-center text-xs text-slate-500">Soal & opsi diacak tiap ujian dari {EXAM_BANK.length} bank • Skor akhir tanpa timer</p>
+      <p className="text-center text-xs text-slate-500">Soal dan opsi diacak setiap putaran.</p>
       <div className="hidden">{scorePreview}</div>
     </div>
   )
