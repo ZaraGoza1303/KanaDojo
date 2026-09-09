@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react'
-import { Card, Button, Badge, ProgressBar } from '../components/ui.jsx'
-import { EXAM_BANK, pickExam30 } from '../data/exam.js'
+import { Card, Button, Badge, Segmented, ProgressBar } from '../components/ui.jsx'
+import { EXAM_BANK, pickExam, COMPO, COMPO_LABEL } from '../data/exam.js'
 import { fireConfetti } from '../lib/confetti.js'
 import { playFinish, playClick } from '../lib/sound.js'
 
@@ -58,6 +58,7 @@ export default function ExamMode({ progress, onExit }) {
   const [perTipe, setPerTipe] = useState(() => _s?.perTipe || {})
   const [results, setResults] = useState(() => _s?.results || [])
   const [done, setDone] = useState(() => !!_s?.done)
+  const [length, setLength] = useState(30)
   const timerRef = useRef(null)
   useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current) }, [])
 
@@ -76,15 +77,15 @@ export default function ExamMode({ progress, onExit }) {
     setBsAns(q && q.tipe === 'bs' ? new Array(q.pernyataanAcak.length).fill(null) : [])
   }
 
-  const start = useCallback(() => {
+  const start = (count) => {
     playClick()
     if (timerRef.current) clearTimeout(timerRef.current)
-    const q = pickExam30()
+    const q = pickExam(count)
     setQueue(q); setPos(0)
     setStats({ correct: 0, xp: 0 }); setPerTipe({}); setResults([]); setDone(false)
     resetJawaban(q[0])
     setPhase('play')
-  }, [])
+  }
 
   const current = queue[pos]
   const total = queue.length || 30
@@ -95,7 +96,7 @@ export default function ExamMode({ progress, onExit }) {
     const xp = Math.max(10, Math.round((score / 100) * 60))
     try {
       progress?.addXp?.(xp)
-      progress?.recordSession?.({ mode: 'exam', label: `Ujian 30 soal`, accuracy: score, count: total, bestCombo: 0 })
+      progress?.recordSession?.({ mode: 'exam', label: `Ujian ${total} soal`, accuracy: score, count: total, bestCombo: 0 })
     } catch {}
     setStats({ ...finalStats, xp, score })
     setDone(true); setPhase('result')
@@ -201,17 +202,28 @@ export default function ExamMode({ progress, onExit }) {
         </div>
         <Card className="space-y-4 p-6 sm:p-8 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700">
           <h2 className="text-xl font-extrabold text-slate-900 dark:text-white">Mode Ujian N5-N4</h2>
-          <p className="text-sm text-slate-600 dark:text-zinc-400">30 soal acak setiap putaran: pilihan ganda, susun kalimat, benar-salah, multi-jawaban, dan pemahaman bacaan kana + romaji. Santai, tanpa timer.</p>
+          <p className="text-sm text-slate-600 dark:text-zinc-400">Soal acak setiap putaran: pilihan ganda, susun kalimat, benar-salah, multi-jawaban, dan pemahaman bacaan kana + romaji. Santai, tanpa timer.</p>
+          <div>
+            <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-slate-600 dark:text-zinc-400">Jumlah soal</label>
+            <Segmented
+              value={length}
+              onChange={setLength}
+              options={[
+                { value: 15, label: '15 soal' },
+                { value: 30, label: '30 soal' },
+              ]}
+            />
+          </div>
           <div className="grid grid-cols-2 gap-2 text-xs">
-            {[['Literal', '8 soal'], ['Melengkapi teks', '7 soal'], ['Susun kata', '3 soal'], ['Susun PG', '4 soal'], ['Inferensial', '4 soal'], ['Benar-Salah', '2 soal'], ['Multi-jawaban', '2 soal']].map(([a, b]) => (
+            {COMPO_LABEL.map(([a, k]) => (
               <div key={a} className="rounded-xl border border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-700/50 p-3">
                 <div className="font-bold text-slate-900 dark:text-white">{a}</div>
-                <div className="text-slate-600 dark:text-zinc-400">{b}</div>
+                <div className="text-slate-600 dark:text-zinc-400">{COMPO[length][k]} soal</div>
               </div>
             ))}
           </div>
           <p className="text-xs text-slate-500 dark:text-zinc-400">Topik: aisatsu • jikoshoukai • jikan • kazoku • dekirukoto • gakkou • uchi • mainichi • shumi • himana. Lulus ≥ 70 + pembahasan tiap soal.</p>
-          <Button onClick={start} className="w-full py-4 text-base">Mulai ujian (30 soal)</Button>
+          <Button onClick={() => start(length)} className="w-full py-4 text-base">Mulai ujian ({length} soal)</Button>
         </Card>
       </div>
     )
@@ -255,7 +267,7 @@ export default function ExamMode({ progress, onExit }) {
         </Card>
         <div className="flex justify-center gap-3">
           <Button variant="ghost" onClick={onExit}>Beranda</Button>
-          <Button onClick={start}>Ujian lagi (acak baru)</Button>
+          <Button onClick={() => start(queue.length || 30)}>Ujian lagi (acak baru)</Button>
         </div>
       </div>
     )
