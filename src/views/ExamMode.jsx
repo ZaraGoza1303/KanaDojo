@@ -66,7 +66,7 @@ export default function ExamMode({ progress, onExit }) {
     const xp = Math.max(10, Math.round((score / 100) * 60))
     try {
       progress?.addXp?.(xp)
-      progress?.recordSession?.({ mode: 'exam', label: `Ujian TKA 30 soal`, accuracy: score, count: total, bestCombo: 0 })
+      progress?.recordSession?.({ mode: 'exam', label: `Ujian 30 soal`, accuracy: score, count: total, bestCombo: 0 })
     } catch {}
     setStats({ ...finalStats, xp, score })
     setDone(true); setPhase('result')
@@ -123,7 +123,7 @@ export default function ExamMode({ progress, onExit }) {
       <div className="mx-auto max-w-xl space-y-5">
         <div className="flex items-center gap-3">
           <Button variant="ghost" onClick={onExit} className="px-3 py-2 text-xs">Beranda</Button>
-          <Badge tone="emerald">Ujian TKA</Badge>
+          <Badge tone="emerald">Ujian</Badge>
           <Badge tone="slate">150 bank • acak 30</Badge>
         </div>
         <Card className="space-y-4 p-6 sm:p-8 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700">
