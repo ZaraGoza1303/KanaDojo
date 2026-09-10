@@ -14,22 +14,32 @@ const loadEX = () => {
     if (!j || !Array.isArray(j.ids) || !j.ids.length) return null
     const queue = j.ids.map(byId).filter(Boolean)
     if (queue.length !== j.ids.length) return null
-    const ok = queue.every((base, i) => {
-      const saved = j.results?.[i]
+    const sh = j.shuffles || {}
+    const ok = queue.every((base) => {
+      const saved = sh[base.id]
       if (!saved) return true
       if (base.tipe === 'susun') return sameSet(saved.kataAcak, base.kata)
       if (base.tipe === 'bs') return sameSet(saved.pernyataanAcak?.map((o) => o.text), base.statements.map((s) => s.text))
       return sameSet(saved.pilihanAcak?.map((o) => o.text), base.pilihan)
     })
     if (!ok) return null
-    return { ids: j.ids, pos: j.pos || 0, picked: j.picked ?? null, susunAns: j.susunAns || [], stats: j.stats || { correct: 0, xp: 0 }, perTipe: j.perTipe || {}, done: !!j.done, results: j.results || [] }
+    const pos = j.pos || 0
+    let results = Array.isArray(j.results) ? j.results : []
+    if (results.length > pos + 1) return null
+    let picked = j.picked ?? null
+    let susunAns = j.susunAns || [], bsAns = j.bsAns || [], mcmaSel = j.mcmaSel || []
+    if (picked !== null) {
+      results = results.slice(0, pos)
+      picked = null; susunAns = []; bsAns = []; mcmaSel = []
+    }
+    return { ids: j.ids, pos, picked, susunAns, bsAns, mcmaSel, stats: j.stats || { correct: 0, xp: 0 }, perTipe: j.perTipe || {}, done: !!j.done, results, shuffles: sh }
   } catch { return null }
 }
 
 const TIPE_LABEL = { literal: 'Literal', cloze: 'Melengkapi', susun: 'Susun kata', susunpg: 'Susun PG', infer: 'Inferensial', bs: 'Benar-Salah', mcma: 'Multi-jawaban' }
 const TIPE_TONE = { literal: 'cyan', cloze: 'indigo', susun: 'amber', susunpg: 'slate', infer: 'emerald', bs: 'rose', mcma: 'cyan' }
 const kunciText = (q) => {
-  if (q.tipe === 'susun') return q.jawaban.join(' ・ ')
+  if (q.tipe === 'susun') return q.jawaban.join('')
   if (q.tipe === 'bs') return q.statements.map((s) => `${s.text}(${s.benar ? 'Benar' : 'Salah'})`).join(' / ')
   if (q.tipe === 'mcma') return q.pilihan.filter((_, i) => q.jawaban.includes(i)).join(' / ')
   return q.pilihan[q.jawaban]
@@ -41,9 +51,9 @@ export default function ExamMode({ progress, onExit }) {
   const [phase, setPhase] = useState(_s ? 'play' : 'config')
   const [queue, setQueue] = useState(() => {
     if (!_s) return []
-    return _s.ids.map((id, i) => {
+    return _s.ids.map((id) => {
       const base = byId(id)
-      const saved = _s.results?.[i]
+      const saved = _s.shuffles?.[id]
       if (base.tipe === 'susun') return { ...base, kataAcak: saved?.kataAcak || [...base.kata].sort(() => Math.random() - 0.5) }
       if (base.tipe === 'bs') return { ...base, pernyataanAcak: saved?.pernyataanAcak || base.statements.map((s) => ({ ...s })).sort(() => Math.random() - 0.5) }
       return { ...base, pilihanAcak: saved?.pilihanAcak || acakPilihan(base) }
@@ -67,7 +77,8 @@ export default function ExamMode({ progress, onExit }) {
     try {
       localStorage.setItem(EX_KEY, JSON.stringify({
         ids: queue.map((q) => q.id), pos, picked, susunAns, bsAns, mcmaSel, stats, perTipe, done,
-        results: queue.map((q, i) => ({ ...(results[i] || {}), kataAcak: q.kataAcak, pilihanAcak: q.pilihanAcak, pernyataanAcak: q.pernyataanAcak })),
+        results,
+        shuffles: Object.fromEntries(queue.map((q) => [q.id, { kataAcak: q.kataAcak, pilihanAcak: q.pilihanAcak, pernyataanAcak: q.pernyataanAcak }])),
       }))
     } catch {}
   }, [phase, queue, pos, picked, susunAns, bsAns, mcmaSel, stats, perTipe, done, results])
@@ -142,11 +153,12 @@ export default function ExamMode({ progress, onExit }) {
   const submitSusun = () => {
     if (picked !== null || !current || susunAns.length !== current.kata.length) return
     const ordered = susunAns.map((i) => current.kataAcak[i])
-    const correct = ordered.join('|') === current.jawaban.join('|')
+    const pickedSentence = ordered.length ? ordered.join('') : '(kosong)'
+    const correct = ordered.length > 0 && ordered.join('|') === current.jawaban.join('|')
     setPicked(true)
     const ns = { correct: stats.correct + (correct ? 1 : 0), xp: stats.xp }
     const pt = { ...perTipe, susun: { c: (perTipe.susun?.c || 0) + (correct ? 1 : 0), t: (perTipe.susun?.t || 0) + 1 } }
-    const nr = [...results, { id: current.id, correct, pickedText: ordered.join(' ・ ') }]
+    const nr = [...results, { id: current.id, correct, pickedText: pickedSentence }]
     setStats(ns); setPerTipe(pt); setResults(nr)
     try { progress?.recordAnswer?.(correct) } catch {}
     try { progress?.addXp?.(correct ? 3 : 1) } catch {}
@@ -255,7 +267,7 @@ export default function ExamMode({ progress, onExit }) {
               const r = results[i]
               return (
                 <div key={q.id} className={`rounded-xl border p-3 text-sm ${r?.correct ? 'border-emerald-200 bg-emerald-50/50 dark:border-emerald-800' : 'border-red-200 bg-red-50/50 dark:border-red-800'}`}>
-                  <div className="flex gap-2 items-center text-xs text-slate-500"><span>#{i + 1}</span><Badge tone={TIPE_TONE[q.tipe]}>{TIPE_LABEL[q.tipe]}</Badge><span>{q.topik}</span><span className="ml-auto">{r?.correct ? 'Benar' : 'Salah'}</span></div>
+                  <div className="flex gap-2 items-center text-xs text-slate-500"><span>#{i + 1}</span><Badge tone={TIPE_TONE[q.tipe]}>{TIPE_LABEL[q.tipe]}</Badge><span>{q.topik}</span><span className="ml-auto">{r ? (r.correct ? 'Benar' : 'Salah') : 'Kosong'}</span></div>
                   <div className="mt-1 font-medium text-slate-900 dark:text-white">{q.soal}</div>
                   <div className="text-xs text-slate-600 dark:text-zinc-400">{q.teks}</div>
                   <div className="mt-1 text-xs">Jawab: <b>{kunciText(q)}</b> {r && !r.correct && <span className="text-red-600">(kamu: {r.pickedText})</span>}</div>
