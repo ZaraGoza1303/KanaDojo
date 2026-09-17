@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
-import { VOCAB_ALL as VOCAB } from '../data/vocabAll.js'
+import { VOCAB_ALL as VOCAB, getVocabByCategories } from '../data/vocabAll.js'
 import { kanaTextToRomaji, extractKana } from '../lib/romaji.js'
 import { Card, Button, Badge } from '../components/ui.jsx'
 
@@ -19,9 +19,16 @@ const loadVC=()=>{
   return null
 }
 
-export default function VocabChoiceMode({ progress, onExit }){
-  const _vc=loadVC()
-  const [queue, setQueue] = useState(()=> _vc?.queue || shuffle(VOCAB).slice(0,30))
+export default function VocabChoiceMode({ progress, onExit, onSetup, categories, total, resumeSession }){
+  const pool = useMemo(()=>{
+    if(resumeSession) return null
+    const p = getVocabByCategories(categories)
+    return p.length ? p : [...VOCAB]
+  },[resumeSession, categories])
+  const totalNum = resumeSession ? null : Math.max(1, Math.min(Number(total)||20, pool?.length||20))
+  const _vc = resumeSession ? loadVC() : null
+  const initialQueue = useMemo(()=> _vc?.queue || shuffle(pool||VOCAB).slice(0, totalNum||20),[])
+  const [queue, setQueue] = useState(initialQueue)
   const [pos, setPos] = useState(()=> _vc?.pos || 0)
   const [wrong, setWrong] = useState(()=> _vc?.wrong || [])
   const [picked, setPicked] = useState(()=> _vc?.picked || null)
@@ -29,7 +36,9 @@ export default function VocabChoiceMode({ progress, onExit }){
   const [done, setDone] = useState(()=> !!_vc?.done)
   const uniqCorrectRef = useRef(new Set(_vc?.uniqCorrect || []))
   const uniqWrongRef = useRef(new Set(_vc?.uniqWrong || []))
-  const initTotalRef = useRef(_vc?.initTotal || 30)
+  const initTotalRef = useRef(_vc?.initTotal || initialQueue.length || totalNum || 20)
+  const poolRef = useRef(pool || VOCAB)
+  const totalRef = useRef(totalNum || initialQueue.length || 20)
   const bestComboRef = useRef(_vc?.bestCombo || 0)
   const comboRef = useRef(0)
   const [showRomaji, setShowRomaji] = useState(()=>{ try{return localStorage.getItem('kd-show-romaji')!=='0'}catch{return true}})
@@ -37,7 +46,8 @@ export default function VocabChoiceMode({ progress, onExit }){
   const current = queue[pos]
   const options = useMemo(()=>{
     if(!current) return []
-    const others = VOCAB.filter(v=>v.id!==current.id)
+    const src = poolRef.current?.length >= 4 ? poolRef.current : VOCAB
+    const others = src.filter(v=>v.id!==current.id)
     const picks = shuffle(others).slice(0,3).map(v=>v.arti)
     return shuffle([current.arti, ...picks])
   },[current])
@@ -78,6 +88,14 @@ export default function VocabChoiceMode({ progress, onExit }){
   },[pos, queue.length, wrong])
 
   useEffect(()=>{ try{localStorage.setItem(VC_KEY, JSON.stringify({ids: queue.map(q=>q.id), pos, wrongIds: wrong.map(w=>w.id), picked, stats, done, uniqCorrect:[...uniqCorrectRef.current], uniqWrong:[...uniqWrongRef.current], initTotal:initTotalRef.current, bestCombo:bestComboRef.current}))}catch{} },[queue,pos,wrong,picked,stats,done])
+  const catLabel = resumeSession ? null : (categories?.length ? (categories.length>2 ? `${categories.slice(0,2).join(', ')} +${categories.length-2}` : categories.join(', ')) : 'Semua')
+  const restartSame = useCallback(()=>{
+    uniqCorrectRef.current=new Set(); uniqWrongRef.current=new Set(); comboRef.current=0; bestComboRef.current=0
+    const n = totalRef.current || initTotalRef.current || 20
+    const q = shuffle(poolRef.current).slice(0, n)
+    initTotalRef.current = q.length
+    setQueue(q); setPos(0); setWrong([]); setPicked(null); setStats({total:0,correct:0,xp:0}); setDone(false)
+  },[])
   const handleExit = useCallback(()=>{
     try{localStorage.removeItem(VC_KEY)}catch{}
     if(stats.total>0){
@@ -90,6 +108,11 @@ export default function VocabChoiceMode({ progress, onExit }){
   },[stats, progress, onExit])
 
   if(!VOCAB.length) return <Card className="p-8 text-center">Vocab kosong</Card>
+  if(!resumeSession && (!pool || !pool.length)) return (
+    <div className="mx-auto max-w-xl space-y-4 text-center">
+      <Card className="p-8">Kategori kosong. <div className="mt-4 flex justify-center gap-2">{onSetup && <Button onClick={onSetup}>Pilih kategori</Button>}<Button variant="ghost" onClick={onExit}>Beranda</Button></div></Card>
+    </div>
+  )
   if(done){
     const acc = stats.total ? Math.round((stats.correct/stats.total)*100) : 0
     const init = initTotalRef.current || 30
@@ -121,7 +144,8 @@ export default function VocabChoiceMode({ progress, onExit }){
           ))}
         </div>
         <div className="mt-4 flex justify-center gap-2">
-          <Button onClick={()=>{ uniqCorrectRef.current=new Set(); uniqWrongRef.current=new Set(); comboRef.current=0; bestComboRef.current=0; setQueue(shuffle(VOCAB).slice(0,30)); setPos(0); setWrong([]); setPicked(null); setStats({total:0,correct:0,xp:0}); setDone(false)}}>Main lagi</Button>
+          <Button onClick={restartSame}>Main lagi</Button>
+          {onSetup && <Button variant="ghost" onClick={onSetup}>Ganti kategori</Button>}
           <Button variant="ghost" onClick={onExit}>Beranda</Button>
         </div>
       </Card>
@@ -134,7 +158,9 @@ export default function VocabChoiceMode({ progress, onExit }){
     <div className="mx-auto max-w-xl space-y-4">
       <div className="flex flex-wrap items-center gap-2">
         <Button variant="ghost" onClick={handleExit} className="px-3 py-2 text-xs">Beranda</Button>
+        {onSetup && <Button variant="ghost" onClick={onSetup} className="px-3 py-2 text-xs">⚙ Setup</Button>}
         <Badge tone="indigo">Pilihan Ganda</Badge>
+        {catLabel && <Badge tone="cyan">{catLabel}</Badge>}
         <Badge tone="slate">{stats.correct}/{stats.total}</Badge>
         <Badge tone={wrong.length? 'rose':'slate'}>Salah {wrong.length}</Badge>
         <Badge tone="slate">{pos+1}/{queue.length}</Badge>

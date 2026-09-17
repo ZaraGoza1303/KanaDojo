@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useCallback } from 'react'
-import { VOCAB_ALL as VOCAB } from '../data/vocabAll.js'
+import { VOCAB_ALL as VOCAB, getVocabByCategories } from '../data/vocabAll.js'
 import { loadSRS, saveSRS, schedule, getQueue } from '../lib/srs.js'
 import { kanaTextToRomaji, extractKana } from '../lib/romaji.js'
 import { Card, Button, Badge } from '../components/ui.jsx'
@@ -13,15 +13,22 @@ const GRADE = [
 
 const ANKI_SESS_KEY='kd-anki-session'
 const loadAnkiSess=()=>{try{const j=JSON.parse(localStorage.getItem(ANKI_SESS_KEY)); if(j) return j}catch{} return null}
-export default function AnkiMode({ progress, onExit }) {
-  const _as=loadAnkiSess()
+export default function AnkiMode({ progress, onExit, onSetup, categories, total, resumeSession }) {
+  const pool = useMemo(()=>{
+    if(resumeSession) return [...VOCAB]
+    const p = getVocabByCategories(categories)
+    return p.length ? p : [...VOCAB]
+  },[resumeSession, categories])
+  const LIMIT = resumeSession ? 30 : Math.max(1, Math.min(Number(total)||20, pool.length||20))
+  const catLabel = resumeSession ? null : (categories?.length ? (categories.length>2 ? `${categories.slice(0,2).join(', ')} +${categories.length-2}` : categories.join(', ')) : 'Semua')
+  const _as = resumeSession ? loadAnkiSess() : null
   const [srsMap, setSrsMap] = useState(() => loadSRS())
   const [flipped, setFlipped] = useState(_as?.flipped || false)
   const [history, setHistory] = useState(_as?.history || [])
   const [stats, setStats] = useState(_as?.stats || { reviewed: 0, correct: 0, xp: 0 })
   const [reviewAhead, setReviewAhead] = useState(_as?.reviewAhead || false)
   const [newOrder, setNewOrder] = useState(() => {
-    const a = [...VOCAB]
+    const a = [...pool]
     for (let i = a.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1))
       ;[a[i], a[j]] = [a[j], a[i]]
@@ -31,14 +38,13 @@ export default function AnkiMode({ progress, onExit }) {
     return m
   })
   const regenOrder = () => {
-    const a=[...VOCAB]; for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}
+    const a=[...pool]; for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}
     const m=new Map(); a.forEach((v,i)=>m.set(v.id,i)); setNewOrder(m)
   }
 
   const queue = useMemo(() => {
-    const q = getQueue(VOCAB, srsMap)
+    const q = getQueue(pool, srsMap)
     q.newCards.sort((a, b) => (newOrder.get(a.id) ?? 0) - (newOrder.get(b.id) ?? 0))
-    const LIMIT=30
     if(q.due.length + q.newCards.length > LIMIT){
       if(q.due.length >= LIMIT){
         q.due = q.due.slice(0, LIMIT)
@@ -48,7 +54,7 @@ export default function AnkiMode({ progress, onExit }) {
       }
     }
     return q
-  }, [srsMap, newOrder])
+  }, [srsMap, newOrder, pool, LIMIT])
   const current = queue.due[0] || queue.newCards[0] || (reviewAhead ? queue.upcoming[0] : null) || null
   const isNew = current ? !srsMap.has(current.id) : false
 
@@ -141,7 +147,7 @@ export default function AnkiMode({ progress, onExit }) {
     return () => window.removeEventListener('keydown', onKey)
   }, [flipped, current, doGrade])
 
-  if (!VOCAB || VOCAB.length === 0) {
+  if (!pool || pool.length === 0) {
     return (
       <div className="mx-auto max-w-xl space-y-4">
         <Button variant="ghost" onClick={onExit} className="px-3 py-2 text-xs">Beranda</Button>
@@ -150,7 +156,7 @@ export default function AnkiMode({ progress, onExit }) {
     )
   }
 
-  const total = 30
+  const totalCards = LIMIT
   const romaji = current ? kanaTextToRomaji(current.kana) : ''
   const contohRomaji = current?.contoh_kana ? kanaTextToRomaji(current.contoh_kana) : ''
   const upcomingDueMs = queue.upcoming.length ? Math.min(...queue.upcoming.map((c) => c._s.due)) - Date.now() : 0
@@ -165,7 +171,9 @@ export default function AnkiMode({ progress, onExit }) {
       <div className="mx-auto max-w-xl space-y-4">
         <div className="flex flex-wrap items-center gap-2">
           <Button variant="ghost" onClick={handleExit} className="px-3 py-2 text-xs">Beranda</Button>
+          {onSetup && <Button variant="ghost" onClick={onSetup} className="px-3 py-2 text-xs">⚙ Setup</Button>}
           <Badge tone="emerald">Selesai</Badge>
+          {catLabel && <Badge tone="cyan">{catLabel}</Badge>}
         </div>
         <Card className="p-8 text-center bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700">
           <p className="text-lg font-bold text-slate-900 dark:text-white">Selesai, semua kartu sudah dijadwalkan</p>
@@ -177,6 +185,7 @@ export default function AnkiMode({ progress, onExit }) {
           <div className="mt-4 flex justify-center gap-2">
             {queue.upcoming.length > 0 && <Button onClick={() => setReviewAhead(true)}>Review ahead</Button>}
             <Button variant="ghost" onClick={doReset}>Reset deck</Button>
+            {onSetup && <Button variant="ghost" onClick={onSetup}>Ganti kategori</Button>}
             <Button onClick={handleExit}>Beranda</Button>
           </div>
         </Card>
@@ -188,10 +197,12 @@ export default function AnkiMode({ progress, onExit }) {
     <div className="mx-auto max-w-xl space-y-4">
       <div className="flex flex-wrap items-center gap-2">
         <Button variant="ghost" onClick={handleExit} className="px-3 py-2 text-xs">Beranda</Button>
+        {onSetup && <Button variant="ghost" onClick={onSetup} className="px-3 py-2 text-xs">⚙ Setup</Button>}
         <Badge tone="indigo">Anki</Badge>
+        {catLabel && <Badge tone="cyan">{catLabel}</Badge>}
         <Badge tone="rose">Due {queue.due.length}</Badge>
         <Badge tone="cyan">Baru {queue.newCards.length}</Badge>
-        <Badge tone="slate">{stats.reviewed}/{total}</Badge>
+        <Badge tone="slate">{stats.reviewed}/{totalCards}</Badge>
         <div className="ml-auto flex items-center gap-2 text-xs text-slate-600 dark:text-zinc-400">
           <span>{stats.reviewed} kartu</span>
           <span className="font-semibold text-emerald-700 dark:text-emerald-300">+{stats.xp} XP</span>

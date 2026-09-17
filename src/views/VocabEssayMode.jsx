@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
-import { VOCAB_ALL as VOCAB } from '../data/vocabAll.js'
+import { VOCAB_ALL as VOCAB, getVocabByCategories } from '../data/vocabAll.js'
 import { kanaTextToRomaji, extractKana, levenshtein } from '../lib/romaji.js'
 import { Card, Button, Badge } from '../components/ui.jsx'
 
@@ -15,7 +15,7 @@ const loadES=()=>{
     const ids=j.ids || (j.queue||[]).map(q=>q.id)
     const queue=ids.map(byId).filter(Boolean)
     if(!queue.length) return null
-    return { queue, pos: j.pos||0, wrong: (j.wrongIds||[]).map(byId).filter(Boolean), input: j.input||'', feedback: j.feedback||null, stats: j.stats||{total:0,correct:0,xp:0}, done: !!j.done }
+    return { queue, pos: j.pos||0, wrong: (j.wrongIds||[]).map(byId).filter(Boolean), input: j.input||'', feedback: j.feedback||null, stats: j.stats||{total:0,correct:0,xp:0}, done: !!j.done, uniqCorrect: j.uniqCorrect||[], uniqWrong: j.uniqWrong||[], initTotal: j.initTotal||ids.length||20, bestCombo: j.bestCombo||0 }
   }catch{}
   return null
 }
@@ -33,9 +33,16 @@ const wordEq = (a, b) => {
   return L >= 4 ? levenshtein(a, b) <= 1 : false
 }
 
-export default function VocabEssayMode({ progress, onExit }){
-  const _s=loadES()
-  const [queue,setQueue]=useState(()=> _s?.queue || shuffle(VOCAB).slice(0,30))
+export default function VocabEssayMode({ progress, onExit, onSetup, categories, total, resumeSession }){
+  const pool = useMemo(()=>{
+    if(resumeSession) return null
+    const p = getVocabByCategories(categories)
+    return p.length ? p : [...VOCAB]
+  },[resumeSession, categories])
+  const totalNum = resumeSession ? null : Math.max(1, Math.min(Number(total)||20, pool?.length||20))
+  const _s = resumeSession ? loadES() : null
+  const initialQueue = useMemo(()=> _s?.queue || shuffle(pool||VOCAB).slice(0, totalNum||20),[])
+  const [queue,setQueue]=useState(initialQueue)
   const [pos,setPos]=useState(()=> _s?.pos || 0)
   const [wrong,setWrong]=useState(()=> _s?.wrong || [])
   const [input,setInput]=useState(()=> _s?.input || '')
@@ -44,7 +51,16 @@ export default function VocabEssayMode({ progress, onExit }){
   const [done,setDone]=useState(()=> !!_s?.done)
   const uniqCorrectRef = useRef(new Set(_s?.uniqCorrect || []))
   const uniqWrongRef = useRef(new Set(_s?.uniqWrong || []))
-  const initTotalRef = useRef(_s?.initTotal || 30)
+  const initTotalRef = useRef(_s?.initTotal || initialQueue.length || totalNum || 20)
+  const poolRef = useRef(pool || VOCAB)
+  const totalRef = useRef(totalNum || initialQueue.length || 20)
+  const catLabel = resumeSession ? null : (categories?.length ? (categories.length>2 ? `${categories.slice(0,2).join(', ')} +${categories.length-2}` : categories.join(', ')) : 'Semua')
+  const restartSame = useCallback(()=>{
+    uniqCorrectRef.current=new Set(); uniqWrongRef.current=new Set(); comboRef.current=0; bestComboRef.current=0
+    const q = shuffle(poolRef.current).slice(0, totalRef.current || 20)
+    initTotalRef.current = q.length
+    setQueue(q); setPos(0); setWrong([]); setInput(''); setFeedback(null); setStats({total:0,correct:0,xp:0}); setDone(false)
+  },[])
   const bestComboRef = useRef(_s?.bestCombo || 0)
   const comboRef = useRef(0)
   const [showRomaji,setShowRomaji]=useState(()=>{ try{return localStorage.getItem('kd-show-romaji-essay')!=='0'}catch{return true}})
@@ -127,6 +143,11 @@ export default function VocabEssayMode({ progress, onExit }){
   },[stats,progress,onExit])
 
   if(!VOCAB.length) return <Card className="p-8 text-center">Vocab kosong</Card>
+  if(!resumeSession && (!pool || !pool.length)) return (
+    <div className="mx-auto max-w-xl space-y-4 text-center">
+      <Card className="p-8">Kategori kosong. <div className="mt-4 flex justify-center gap-2">{onSetup && <Button onClick={onSetup}>Pilih kategori</Button>}<Button variant="ghost" onClick={onExit}>Beranda</Button></div></Card>
+    </div>
+  )
   if(done){
     const acc = stats.total ? Math.round((stats.correct/stats.total)*100) : 0
     const init = initTotalRef.current || 30
@@ -158,7 +179,8 @@ export default function VocabEssayMode({ progress, onExit }){
           ))}
         </div>
         <div className="mt-4 flex justify-center gap-2">
-          <Button onClick={()=>{ uniqCorrectRef.current=new Set(); uniqWrongRef.current=new Set(); comboRef.current=0; bestComboRef.current=0; setQueue(shuffle(VOCAB).slice(0,30)); setPos(0); setWrong([]); setInput(''); setFeedback(null); setStats({total:0,correct:0,xp:0}); setDone(false)}}>Main lagi</Button>
+          <Button onClick={restartSame}>Main lagi</Button>
+          {onSetup && <Button variant="ghost" onClick={onSetup}>Ganti kategori</Button>}
           <Button variant="ghost" onClick={onExit}>Beranda</Button>
         </div>
       </Card>
@@ -171,7 +193,9 @@ export default function VocabEssayMode({ progress, onExit }){
     <div className="mx-auto max-w-xl space-y-4">
       <div className="flex flex-wrap items-center gap-2">
         <Button variant="ghost" onClick={handleExit} className="px-3 py-2 text-xs">Beranda</Button>
+        {onSetup && <Button variant="ghost" onClick={onSetup} className="px-3 py-2 text-xs">⚙ Setup</Button>}
         <Badge tone="indigo">Essay</Badge>
+        {catLabel && <Badge tone="cyan">{catLabel}</Badge>}
         <Badge tone="slate">{stats.correct}/{stats.total}</Badge>
         <Badge tone={wrong.length?'rose':'slate'}>Salah {wrong.length}</Badge>
         <Badge tone="slate">{pos+1}/{queue.length}</Badge>
