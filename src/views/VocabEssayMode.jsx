@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import { VOCAB_ALL as VOCAB, getVocabByCategories } from '../data/vocabAll.js'
-import { kanaTextToRomaji, extractKana, levenshtein } from '../lib/romaji.js'
+import { kanaTextToRomaji, extractKana } from '../lib/romaji.js'
+import { isAnswerCorrect } from '../lib/answerMatch.js'
 import { Card, Button, Badge } from '../components/ui.jsx'
 
 function shuffle(a){ const b=[...a]; for(let i=b.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [b[i],b[j]]=[b[j],b[i]] } return b }
@@ -19,20 +20,6 @@ const loadES=()=>{
   }catch{}
   return null
 }
-function norm(s){ return s.trim().toLowerCase().replace(/\s+/g,' ') }
-// urutan kata tidak peduli: "pulang selamat datang" == "selamat datang pulang"
-function tok(s){ return norm(s).replace(/[-']/g,' ').split(/\s+/).filter(Boolean).sort().join(' ') }
-// ---- penilaian fleksibel untuk terjemahan bebas ----
-const STOP = new Set(['dari','ke','di','yang','untuk','dengan','pada','dalam','itu','ini','juga','sekali','banget','sangat','akan','sudah','belum','oleh','atau','dan','adalah','merupakan','bisa','dapat'])
-const words = (s) => norm(s).replace(/[-']/g,' ').split(/\s+/).filter(Boolean)
-const keyWords = (s) => words(s).filter(w => !STOP.has(w))
-// kata dianggap sama bila identik atau typo 1 huruf saja (biar penynyo != penyanyi)
-const wordEq = (a, b) => {
-  if (a === b) return true
-  const L = Math.max(a.length, b.length)
-  return L >= 4 ? levenshtein(a, b) <= 1 : false
-}
-
 export default function VocabEssayMode({ progress, onExit, onSetup, categories, total, resumeSession }){
   const pool = useMemo(()=>{
     if(resumeSession) return null
@@ -74,26 +61,9 @@ export default function VocabEssayMode({ progress, onExit, onSetup, categories, 
 
   const submit = useCallback(()=>{
     if(!current || !input.trim() || feedback) return
-    const n = norm(input)
-    const t = tok(input)
-    const cands = [current.arti, ...(current.alt||[])].map(norm)
-    const inWords = keyWords(input)
-    let ok = cands.some(c => c === n || tok(c) === t)
-    if(!ok){
-      for(const c of cands){
-        // aturan lama: jawaban berada di dalam kandidat atau sebaliknya
-        if(c.length>=4 && n.length>=4 && (c.includes(n) || n.includes(c))) { ok=true; break }
-        // fleksibel: bandingkan kata-kata inti (abaikan stopword, toleran typo,
-        // terima kata tambahan seperti "selamat kembali dari mana")
-        const cWords = keyWords(c)
-        if(!inWords.length || !cWords.length) continue
-        const eq = inWords.length === cWords.length && inWords.every(w => cWords.some(cw => wordEq(w, cw)))
-        if(eq) { ok=true; break }
-        const [small, big] = inWords.length <= cWords.length ? [inWords, cWords] : [cWords, inWords]
-        const matched = small.filter(w => big.some(bw => wordEq(w, bw))).length
-        if(matched === small.length && matched >= Math.max(1, Math.ceil(big.length * 0.5))) { ok=true; break }
-      }
-    }
+    // Penilaian terpusat di src/lib/answerMatch.js: jawaban harus menutup seluruh
+    // arti kunci (atau satu bagian penuh bila arti punya beberapa makna "a / b").
+    const ok = isAnswerCorrect(input, current.arti, current.alt)
     setFeedback(ok ? 'correct' : 'wrong')
     if(ok){ uniqCorrectRef.current.add(current.id); comboRef.current+=1; bestComboRef.current=Math.max(bestComboRef.current, comboRef.current) }
     else { uniqWrongRef.current.add(current.id); comboRef.current=0; setWrong(w=> w.some(v=> v.id===current.id) ? w : [...w, current]) }
