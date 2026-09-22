@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react'
 import { Card, Button, Badge, Segmented, ProgressBar } from '../components/ui.jsx'
-import { EXAM_BANK, pickExam, COMPO, COMPO_LABEL } from '../data/exam.js'
+import { EXAM_BANK, pickExam, COMPO, COMPO_LABEL } from '../data/exam/index.js'
 import { fireConfetti } from '../lib/confetti.js'
 import { playFinish, playClick } from '../lib/sound.js'
 

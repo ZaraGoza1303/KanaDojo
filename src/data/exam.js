@@ -170,10 +170,10 @@ export const COMPO_LABEL = [
   ['Susun PG', 'susunpg'], ['Inferensial', 'infer'], ['Benar-Salah', 'bs'], ['Multi-jawaban', 'mcma'],
 ]
 
-export function pickExam(count = 30) {
+export function pickExamFrom(count = 30, bank = EXAM_BANK) {
   const comp = COMPO[count] || COMPO[30]
-  const by = (t) => EXAM_BANK.filter((q) => q.tipe === t)
-  const take = (t) => shuffle(by(t)).slice(0, comp[t])
+  const by = (t) => bank.filter((q) => q.tipe === t)
+  const take = (t) => shuffle(by(t)).slice(0, comp[t] || 0)
   const all = shuffle([...take('literal'), ...take('cloze'), ...take('susun'), ...take('susunpg'), ...take('infer'), ...take('bs'), ...take('mcma')])
   return all.map((q) => {
     if (q.tipe === 'susun') return { ...q, kataAcak: shuffle(q.kata) }
@@ -181,4 +181,6 @@ export function pickExam(count = 30) {
     return { ...q, pilihanAcak: shuffle(q.pilihan.map((p, i) => ({ text: p, correct: Array.isArray(q.jawaban) ? q.jawaban.includes(i) : i === q.jawaban }))) }
   })
 }
+
+export const pickExam = (count = 30) => pickExamFrom(count, EXAM_BANK)
 export const pickExam30 = () => pickExam(30)
