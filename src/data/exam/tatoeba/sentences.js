@@ -1,0 +1,49 @@
+// Kalimat pilihan dari Tatoeba (lisensi CC BY 2.0 FR) sebagai bahan soal bacaan ujian.
+//
+//   id   : sentence id di Tatoeba (untuk atribusi & penelusuran)
+//   user : penulis kalimat di Tatoeba (wajib untuk atribusi CC BY)
+//   kana : kana berspasi gaya teks app (Tatoeba menulis tanpa spasi)
+//   ind  : terjemahan Indonesia (ditulis ulang, bukan salinan mentah)
+//
+// Daftar lengkap kredit ada di THIRD_PARTY_NOTICES.md.
+export const TATOEBA_SENTENCES = [
+  { id: 171638, user: 'Yorwba', kana: 'きょうは げつようびです。', ind: 'Hari ini hari Senin.' },
+  { id: 227079, user: 'small_snow', kana: 'おてがみ ありがとう ございます。', ind: 'Terima kasih atas suratnya.' },
+  { id: 156092, user: 'Yorwba', kana: 'わたしは しゅふです。', ind: 'Saya ibu rumah tangga.' },
+  { id: 232196, user: 'Dominika7', kana: 'あなたは なんにん きょうだいが いますか。', ind: 'Kamu punya berapa saudara?' },
+  { id: 168964, user: 'tommy_san', kana: 'しがつ ついたちです。', ind: 'Sekarang tanggal satu April.' },
+  { id: 162840, user: 'small_snow', kana: 'わたしの ちちは ぎんこういんです。', ind: 'Ayah saya pegawai bank.' },
+  { id: 84431, user: 'small_snow', kana: 'ちちは あたらしい くるまを かいました。', ind: 'Ayah membeli mobil baru.' },
+  { id: 202147, user: 'tommy_san', kana: 'デパートで あたらしい ぼうしを かいました。', ind: 'Saya membeli topi baru di departemen store.' },
+  { id: 80443, user: 'CK', kana: 'あしたは いえに います。', ind: 'Besok saya di rumah.' },
+  { id: 152700, user: 'small_snow', kana: 'わたしは まいにち はしります。', ind: 'Saya berlari setiap hari.' },
+  { id: 125430, user: 'KK_kaku_', kana: 'おとうとは わたしより せが たかいです。', ind: 'Adik laki-laki saya lebih tinggi dari saya.' },
+  { id: 169953, user: 'Dominika7', kana: 'きのうは にちようびでした。', ind: 'Kemarin hari Minggu.' },
+  { id: 429432, user: 'small_snow', kana: 'わたしは まいあさ あさごはんを たべます。', ind: 'Saya makan sarapan setiap pagi.' },
+  { id: 155489, user: 'tommy_san', kana: 'わたしは せんげつ かぜを ひきました。', ind: 'Bulan lalu saya masuk angin.' },
+  { id: 163969, user: 'small_snow', kana: 'わたしの いえは えきに ちかくて べんりです。', ind: 'Rumah saya dekat stasiun dan praktis.' },
+  { id: 85707, user: 'small_snow', kana: 'ひこうきで りょこうするのは きらいです。', ind: 'Saya tidak suka berwisata naik pesawat.' },
+  { id: 152892, user: 'small_snow', kana: 'わたしは べんきょうする まえに テレビを みます。', ind: 'Saya menonton TV sebelum belajar.' },
+  { id: 171745, user: 'small_snow', kana: 'きょうは とても よい てんきです。', ind: 'Hari ini cuacanya sangat bagus.' },
+  { id: 164011, user: 'bunbuku', kana: 'わたしの いえの ちかくに こうえんが あります。', ind: 'Di dekat rumah saya ada taman.' },
+  { id: 83000, user: 'KK_kaku_', kana: 'ははは いま てがみを かいて います。', ind: 'Ibu sekarang sedang menulis surat.' },
+  { id: 124623, user: 'small_snow', kana: 'でんわばんごうは なんばんですか。', ind: 'Nomor teleponnya berapa?' },
+  { id: 159489, user: 'small_snow', kana: 'わたしは チョコレートが すきです。', ind: 'Saya suka cokelat.' },
+  { id: 221555, user: 'small_snow', kana: 'この じてんしゃは わたしの おとうとの ものです。', ind: 'Sepeda ini milik adik laki-laki saya.' },
+  { id: 156728, user: 'small_snow', kana: 'わたしは きのう ちちを てつだいました。', ind: 'Kemarin saya membantu ayah.' },
+  { id: 163546, user: 'Dominika7', kana: 'わたしの あねは こどもが だいすきです。', ind: 'Kakak perempuan saya sangat suka anak kecil.' },
+  { id: 156077, user: 'Dominika7', kana: 'わたしは てがみを かいて います。', ind: 'Saya sedang menulis surat.' },
+  { id: 162753, user: 'bunbuku', kana: 'わたしの へやには テレビが ありません。', ind: 'Di kamar saya tidak ada TV.' },
+  { id: 163983, user: 'small_snow', kana: 'わたしの いえは ここから とおいです。', ind: 'Rumah saya jauh dari sini.' },
+  { id: 169947, user: 'KK_kaku_', kana: 'きのうは ぼくの たんじょうびでした。', ind: 'Kemarin hari ulang tahun saya.' },
+  { id: 237463, user: 'atitarev', kana: 'あなたの たんじょうびは いつですか。', ind: 'Kapan ulang tahunmu?' },
+  { id: 153093, user: 'bunbuku', kana: 'わたしは びょういんで はたらいて います。', ind: 'Saya bekerja di rumah sakit.' },
+  { id: 106294, user: 'small_snow', kana: 'かれは わたしたちの がっこうの せんせいです。', ind: 'Dia guru di sekolah kami.' },
+  { id: 218827, user: 'small_snow', kana: 'これが ゆうびんきょくで、あれが ぎんこうです。', ind: 'Ini kantor pos, dan itu bank.' },
+  { id: 152726, user: 'small_snow', kana: 'わたしは まいにち ろくじに おきます。', ind: 'Saya bangun jam enam setiap hari.' },
+  { id: 163096, user: 'small_snow', kana: 'わたしの たんじょうびは じゅういちがつです。', ind: 'Ulang tahun saya bulan November.' },
+  { id: 171621, user: 'small_snow', kana: 'きょうは きのうより あたたかいです。', ind: 'Hari ini lebih hangat daripada kemarin.' },
+]
+
+export const TATOEBA_SENTENCE_COUNT = TATOEBA_SENTENCES.length
+export const tatoebaById = (id) => TATOEBA_SENTENCES.find((s) => s.id === id)

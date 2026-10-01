@@ -1,13 +1,13 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react'
 import { Card, Button, Badge, Segmented, ProgressBar } from '../components/ui.jsx'
-import { EXAM_BANK, pickExam, COMPO, COMPO_LABEL } from '../data/exam/index.js'
+import { COMPO, COMPO_LABEL, pickExamFrom } from '../data/exam/plan.js'
+import { loadExamBank } from '../data/exam/loader.js'
 import { fireConfetti } from '../lib/confetti.js'
 import { playFinish, playClick } from '../lib/sound.js'
 
 const EX_KEY = 'kd-exam-state-v2'
-const byId = (id) => EXAM_BANK.find((q) => q.id === id)
 const sameSet = (a, b) => Array.isArray(a) && Array.isArray(b) && a.length === b.length && [...a].sort().join('|') === [...b].sort().join('|')
-const loadEX = () => {
+const loadEX = (bank, byId) => {
   try {
     try { localStorage.removeItem('kd-exam-state') } catch {}
     const j = JSON.parse(localStorage.getItem(EX_KEY))
@@ -46,8 +46,20 @@ const kunciText = (q) => {
 }
 const acakPilihan = (base) => base.pilihan.map((p, pi) => ({ text: p, correct: Array.isArray(base.jawaban) ? base.jawaban.includes(pi) : pi === base.jawaban })).sort(() => Math.random() - 0.5)
 
-export default function ExamMode({ progress, onExit }) {
-  const _s = loadEX()
+export default function ExamMode(props) {
+  const [bank, setBank] = useState(null)
+  useEffect(() => {
+    let aktif = true
+    loadExamBank().then((b) => { if (aktif) setBank(b) }).catch(() => {})
+    return () => { aktif = false }
+  }, [])
+  if (!bank) return <Card className="p-8 text-center text-slate-500">Memuat bank soal…</Card>
+  return <ExamGame bank={bank} {...props} />
+}
+
+function ExamGame({ bank, progress, onExit }) {
+  const byId = useCallback((id) => bank.find((q) => q.id === id), [bank])
+  const _s = loadEX(bank, byId)
   const [phase, setPhase] = useState(_s ? 'play' : 'config')
   const [queue, setQueue] = useState(() => {
     if (!_s) return []
@@ -91,7 +103,7 @@ export default function ExamMode({ progress, onExit }) {
   const start = (count) => {
     playClick()
     if (timerRef.current) clearTimeout(timerRef.current)
-    const q = pickExam(count)
+    const q = pickExamFrom(count, bank)
     setQueue(q); setPos(0)
     setStats({ correct: 0, xp: 0 }); setPerTipe({}); setResults([]); setDone(false)
     resetJawaban(q[0])

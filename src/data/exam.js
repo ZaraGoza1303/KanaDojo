@@ -159,28 +159,10 @@ export const EXAM_BANK = [
   MC(150, 'jikan', 'がっこうの じかんわり : いちじかんめは こくご、にじかんめは さんすう、さんじかんめは たいいく、よじかんめは おんがくです。ひるやすみの あとは ずこうです。', 'ごぜんの じゅぎょうに ある ものを すべて えらんで ください。(Pilih semua yang benar.)', ['こくご', 'さんすう', 'たいいく', 'おんがく', 'ずこう'], [0, 1, 2, 3], 'ひるやすみのまえ = pagi.'),
 ]
 
-function shuffle(a) { const b = [...a]; for (let i = b.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [b[i], b[j]] = [b[j], b[i]] } return b }
-
-export const COMPO = {
-  30: { literal: 8, cloze: 7, susun: 3, susunpg: 4, infer: 4, bs: 2, mcma: 2 },
-  15: { literal: 4, cloze: 3, susun: 2, susunpg: 2, infer: 2, bs: 1, mcma: 1 },
-}
-export const COMPO_LABEL = [
-  ['Literal', 'literal'], ['Melengkapi teks', 'cloze'], ['Susun kata', 'susun'],
-  ['Susun PG', 'susunpg'], ['Inferensial', 'infer'], ['Benar-Salah', 'bs'], ['Multi-jawaban', 'mcma'],
-]
-
-export function pickExamFrom(count = 30, bank = EXAM_BANK) {
-  const comp = COMPO[count] || COMPO[30]
-  const by = (t) => bank.filter((q) => q.tipe === t)
-  const take = (t) => shuffle(by(t)).slice(0, comp[t] || 0)
-  const all = shuffle([...take('literal'), ...take('cloze'), ...take('susun'), ...take('susunpg'), ...take('infer'), ...take('bs'), ...take('mcma')])
-  return all.map((q) => {
-    if (q.tipe === 'susun') return { ...q, kataAcak: shuffle(q.kata) }
-    if (q.tipe === 'bs') return { ...q, pernyataanAcak: shuffle(q.statements.map((s) => ({ ...s }))) }
-    return { ...q, pilihanAcak: shuffle(q.pilihan.map((p, i) => ({ text: p, correct: Array.isArray(q.jawaban) ? q.jawaban.includes(i) : i === q.jawaban }))) }
-  })
-}
+// Komposisi & pemilih soal pindah ke ./exam/plan.js supaya bank soal bisa dimuat
+// malas lewat loader.js (code splitting). Diekspor ulang untuk kompatibilitas.
+import { pickExamFrom } from './exam/plan.js'
+export { COMPO, COMPO_LABEL, pickExamFrom } from './exam/plan.js'
 
 export const pickExam = (count = 30) => pickExamFrom(count, EXAM_BANK)
 export const pickExam30 = () => pickExam(30)

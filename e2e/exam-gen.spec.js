@@ -1,7 +1,9 @@
 import { test, expect } from '@playwright/test'
 import { furiganaToKana, cleanCandidate, hasKanji, hasBracket, isKanaOnly } from '../scripts/exam-gen/lib/furigana.mjs'
 import { verbForms, TRANSITIVE, PLACE_ACTIVITY, TIME_WITH_NI } from '../scripts/exam-gen/lib/verbForms.mjs'
+import { segment } from '../scripts/exam-gen/lib/segment.mjs'
 import { VOCAB } from '../src/data/vocab.js'
+import { TATOEBA_SENTENCES } from '../src/data/exam/tatoeba/sentences.js'
 
 test('furigana: bacaan tunggal & multi-kolom digabung jadi kana', () => {
   expect(furiganaToKana('ギター[弾|ひ]けるようになりたい。')).toBe('ギターひけるようになりたい。')
@@ -52,6 +54,22 @@ test('verba: konjugasi tidak lazim tetap benar', () => {
   expect(verbForms('かえる')).toEqual({ masu: 'かえります', te: 'かえって', stem: 'かえり', nai: 'かえら' }) // godan, bukan ichidan
   expect(verbForms('べんきょうする')).toEqual({ masu: 'べんきょうします', te: 'べんきょうして', stem: 'べんきょうし', nai: 'べんきょうし' })
   expect(verbForms('しごとをする').masu).toBe('しごとをします')
+})
+
+test('segmentasi: memberi spasi tanpa mengubah kalimat', () => {
+  expect(segment('きょうはすいようびです。')).toBe('きょう は すいようび です。')
+  expect(segment('がっこうでともだちとべんきょうします。')).toBe('がっこう で ともだち と べんきょうします。')
+  expect(segment('わたしはびょういんではたらいています。')).toBe('わたし は びょういん で はたらいて います。')
+  expect(segment('わたしは、バスでがっこうにいく。')).toBe('わたし は、 バス で がっこう に いく。')
+  expect(segment('')).toBe('')
+})
+
+test('segmentasi: isi kalimat Tatoeba tidak pernah berubah', () => {
+  const bad = []
+  for (const s of TATOEBA_SENTENCES) {
+    if (segment(s.kana).replace(/ /g, '') !== s.kana.replace(/ /g, '')) bad.push(`${s.id}: ${segment(s.kana)}`)
+  }
+  expect(bad, bad.join('\n')).toEqual([])
 })
 
 test('verba: daftar kategori tidak ada duplikat', () => {

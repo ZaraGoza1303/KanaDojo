@@ -1,6 +1,9 @@
 import { test, expect } from '@playwright/test'
 import { EXAM_BANK, EXAM_TOPICS, pickExam } from '../src/data/exam/index.js'
 import { EXAM_BANK_GENERATED } from '../src/data/exam/generated/index.js'
+import { EXAM_BANK_TATOEBA } from '../src/data/exam/tatoeba/index.js'
+import { TATOEBA_SENTENCES } from '../src/data/exam/tatoeba/sentences.js'
+import { TATOEBA_SUSUN } from '../src/data/exam/tatoeba/susun.js'
 import { COMPO } from '../src/data/exam.js'
 import { hasKanji } from '../scripts/exam-gen/lib/furigana.mjs'
 
@@ -10,11 +13,33 @@ const KANA = /^[\u3041-\u309F\u30A0-\u30FF\u3005\u3000-\u303F\uFF01-\uFF60ー �
 const teksOk = (t) => !hasKanji(t) && KANA.test(String(t).replace(/_{2,}/g, '_'))
 
 test('bank ujian: jumlah minimal dan semua 7 tipe terisi', () => {
-  expect(EXAM_BANK.length).toBeGreaterThanOrEqual(460)
+  expect(EXAM_BANK.length).toBeGreaterThanOrEqual(540)
   const tally = {}
   for (const q of EXAM_BANK) tally[q.tipe] = (tally[q.tipe] || 0) + 1
   for (const t of TIPES) expect(tally[t] || 0, `tipe ${t} kosong`).toBeGreaterThan(0)
   expect(EXAM_TOPICS.length).toBeGreaterThanOrEqual(15)
+})
+
+test('bank Tatoeba: atribusi CC BY lengkap dan id sumber valid', () => {
+  expect(EXAM_BANK_TATOEBA.length).toBeGreaterThanOrEqual(80)
+  expect(TATOEBA_SENTENCES.length).toBeGreaterThanOrEqual(30)
+  const known = new Set(TATOEBA_SENTENCES.map((s) => s.id))
+  const bad = []
+  for (const q of EXAM_BANK_TATOEBA) {
+    const ids = [...String(q.pembahasan).matchAll(/Tatoeba #(\d+)/g)].map((m) => Number(m[1]))
+    if (!ids.length) bad.push(`${q.id}: atribusi hilang`)
+    for (const id of ids) if (!known.has(id)) bad.push(`${q.id}: id ${id} tidak ada di sentences.js`)
+  }
+  expect(bad, bad.join('\n')).toEqual([])
+})
+
+test('bank Tatoeba: kalimat kurasi lengkap & susun memakai urutan asli', () => {
+  const ids = TATOEBA_SENTENCES.map((s) => s.id)
+  expect(ids.filter((x, i, a) => a.indexOf(x) !== i), 'sentence id duplikat').toEqual([])
+  expect(TATOEBA_SENTENCES.filter((s) => !s.ind || !s.user || !s.kana).map((s) => s.id)).toEqual([])
+  const kalimat = new Set(TATOEBA_SENTENCES.map((s) => s.kana))
+  const bad = TATOEBA_SUSUN.filter((q) => !kalimat.has(q.jawaban.join(' '))).map((q) => q.id)
+  expect(bad, `susun tidak cocok kalimat sumber: ${bad.join(', ')}`).toEqual([])
 })
 
 test('bank ujian: id unik, topik & pembahasan lengkap', () => {
@@ -84,10 +109,10 @@ test('UI ujian: mode ujian render dengan bank gabungan', async ({ page }) => {
   await page.getByText('Ujian N5-N4').click()
   await expect(page.getByText('Mode Ujian N5-N4')).toBeVisible()
   await page.getByRole('button', { name: /Mulai ujian/ }).click()
-  // soal pertama harus tampil lengkap: penghitung + label tipe + teks soal
+  // soal pertama harus tampil lengkap: penghitung + label tipe + badge topik
   await expect(page.getByText(/^Soal 1\/\d+$/)).toBeVisible()
   await expect(page.getByText(/^(Literal|Melengkapi|Susun kata|Susun PG|Inferensial|Benar-Salah|Multi-jawaban)$/).first()).toBeVisible()
-  await expect(page.getByText(/ただしい|つぎの|ことば|ぶん|かいわ/).first()).toBeVisible()
+  await expect(page.getByText(new RegExp(`^(${EXAM_TOPICS.join('|')})$`)).first()).toBeVisible()
 })
 
 test('bank ujian: pickExam(30) memenuhi komposisi COMPO', () => {
