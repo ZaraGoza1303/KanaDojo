@@ -60,8 +60,9 @@ for (const line of fetchTsv(`${BASE}/jpn/jpn_transcriptions.tsv.bz2`).split('\n'
   else raw.set(id, { user, kana: [kana] })
 }
 
-// ---------- 3. terjemahan Indonesia (bahan cek) ----------
+// ---------- 3. terjemahan Indonesia (bahan cek) + penulis kalimat (atribusi benar) ----------
 const indPairs = new Map() // jpn id -> ind text
+const authors = new Map() // jpn id -> username penulis kalimat
 try {
   const ind = new Map()
   for (const line of fetchTsv(`${BASE}/ind/ind_sentences.tsv.bz2`).split('\n')) {
@@ -76,6 +77,16 @@ try {
   }
 } catch {
   console.warn('peringatan: data terjemahan Indonesia dilewati')
+}
+try {
+  // kolom ke-4 = username penulis kalimat (bukan penulis transkripsi)
+  for (const line of fetchTsv(`${BASE}/jpn/jpn_sentences_detailed.tsv.bz2`).split('\n')) {
+    if (!line) continue
+    const [id, , , user] = line.split('\t')
+    if (id && user && user !== '\\N') authors.set(id, user)
+  }
+} catch {
+  console.warn('peringatan: data penulis kalimat dilewati')
 }
 
 // ---------- 4. skor kelayakan ----------
@@ -104,7 +115,8 @@ for (const [id, { user, kana: list }] of raw) {
     const ok = t?.has('OK') ? 2 : 0
     const tanaka = t?.has('Tanaka Corpus') ? 1 : 0
     const hasInd = indPairs.has(id) ? 1 : 0
-    rows.push({ id, user: user || '-', kana, spasi: segment(kana), cov, score: ok + tanaka + hasInd + cov, ind: indPairs.get(id) || '' })
+    // atribusi CC BY memakai penulis kalimat; kosong bila anonim (pakai URL saja)
+    rows.push({ id, user: authors.get(id) || user || '', kana, spasi: segment(kana), cov, score: ok + tanaka + hasInd + cov, ind: indPairs.get(id) || '' })
   }
 }
 

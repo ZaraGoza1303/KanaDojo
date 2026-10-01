@@ -4,6 +4,7 @@ import { EXAM_BANK_GENERATED } from '../src/data/exam/generated/index.js'
 import { EXAM_BANK_TATOEBA } from '../src/data/exam/tatoeba/index.js'
 import { TATOEBA_SENTENCES } from '../src/data/exam/tatoeba/sentences.js'
 import { TATOEBA_SUSUN } from '../src/data/exam/tatoeba/susun.js'
+import { TATOEBA_CLOZE } from '../src/data/exam/tatoeba/cloze.js'
 import { COMPO } from '../src/data/exam.js'
 import { hasKanji } from '../scripts/exam-gen/lib/furigana.mjs'
 
@@ -13,7 +14,7 @@ const KANA = /^[\u3041-\u309F\u30A0-\u30FF\u3005\u3000-\u303F\uFF01-\uFF60ãƒ¼ ã€
 const teksOk = (t) => !hasKanji(t) && KANA.test(String(t).replace(/_{2,}/g, '_'))
 
 test('bank ujian: jumlah minimal dan semua 7 tipe terisi', () => {
-  expect(EXAM_BANK.length).toBeGreaterThanOrEqual(540)
+  expect(EXAM_BANK.length).toBeGreaterThanOrEqual(620)
   const tally = {}
   for (const q of EXAM_BANK) tally[q.tipe] = (tally[q.tipe] || 0) + 1
   for (const t of TIPES) expect(tally[t] || 0, `tipe ${t} kosong`).toBeGreaterThan(0)
@@ -36,10 +37,26 @@ test('bank Tatoeba: atribusi CC BY lengkap dan id sumber valid', () => {
 test('bank Tatoeba: kalimat kurasi lengkap & susun memakai urutan asli', () => {
   const ids = TATOEBA_SENTENCES.map((s) => s.id)
   expect(ids.filter((x, i, a) => a.indexOf(x) !== i), 'sentence id duplikat').toEqual([])
-  expect(TATOEBA_SENTENCES.filter((s) => !s.ind || !s.user || !s.kana).map((s) => s.id)).toEqual([])
+  // setiap kalimat wajib punya terjemahan; penulis kosong = URL saja (diuji di tes atribusi)
+  expect(TATOEBA_SENTENCES.filter((s) => !s.ind || !s.kana).map((s) => s.id)).toEqual([])
   const kalimat = new Set(TATOEBA_SENTENCES.map((s) => s.kana))
   const bad = TATOEBA_SUSUN.filter((q) => !kalimat.has(q.jawaban.join(' '))).map((q) => q.id)
   expect(bad, `susun tidak cocok kalimat sumber: ${bad.join(', ')}`).toEqual([])
+})
+
+test('bank Tatoeba: kalimat cloze bersumber & kunci = bentuk asli', () => {
+  expect(TATOEBA_CLOZE.length).toBeGreaterThanOrEqual(10)
+  const bad = []
+  for (const q of TATOEBA_CLOZE) {
+    if (q.teks.split(' ').some((w) => w.includes('___') && w !== '___')) {
+      // blank harus utuh satu potongan kata
+      if (!q.teks.includes(' ___') && !q.teks.startsWith('___')) bad.push(`${q.id}: blank menempel`)
+    }
+    if (TATOEBA_SENTENCES.every((s) => !String(q.pembahasan).includes(`#${s.id} `) && !String(q.pembahasan).includes(`#${s.id} (`))) {
+      bad.push(`${q.id}: atribusi kalimat hilang`)
+    }
+  }
+  expect(bad, bad.join('\n')).toEqual([])
 })
 
 test('bank ujian: id unik, topik & pembahasan lengkap', () => {

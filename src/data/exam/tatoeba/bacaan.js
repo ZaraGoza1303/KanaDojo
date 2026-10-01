@@ -145,6 +145,89 @@ const BACAAN_MCMA = [
   M(2166, 'kazoku', [159489, 83000], null, ['チョコレート', 'てがみ', 'コーヒー', 'ほん', 'ケーキ'], [0, 1], '「チョコレート」dan「てがみ」ada di teks.'),
 ]
 
-export const TATOEBA_BACAAN = [...BACAAN_LITERAL, ...BACAAN_INFER, ...BACAAN_BS, ...BACAAN_MCMA]
-export const TATOEBA_BACAAN_COUNT = TATOEBA_BACAAN.length
 export const TATOEBA_TOTAL_SENTENCES = TATOEBA_SENTENCES.length
+// export gabungan TATOEBA_BACAAN ada di akhir file (setelah semua batch terdefinisi)
+
+// ---------- Batch 2.2: lampirkan sumber terstruktur (validasi mesin) ----------
+const S = (q, src) => ({ ...q, src })
+
+const BACAAN_LITERAL_2 = [
+  S(L(2201, 'kazoku', [164550], 'おとうとは なんにん いますか。', ['ひとり', 'ふたり', 'さんにん', 'よにん', 'ひとりも いない'], 0, '「おとうとが ひとり」= satu adik laki-laki.'), [164550]),
+  S(L(2202, 'kazoku', [84830], 'かぞくは なんにんですか。', ['さんにん', 'よにん', 'ふたり', 'ごにん', 'ひとり'], 0, '「ちちと ははと いもうと」= 3 orang.'), [84830]),
+  S(L(2203, 'youbi', [124461], 'どようびの つぎは なんようびですか。', ['にちようび', 'どようび', 'げつようび', 'かようび', 'もくようび'], 0, '「どようびの つぎは にちようび」= setelah Sabtu adalah Minggu.'), [124461]),
+  S(L(2204, 'tenki', [171630], 'きょうは きのうと くらべて どうですか。', ['おなじ くらい あつい', 'きょうの ほうが すずしい', 'きのうの ほうが さむい', 'きょうも ゆきです', 'きのうは あめです'], 0, '「きのうと おなじ くらい あつい」= sepanas kemarin.'), [171630]),
+  S(L(2205, 'youbi', [175592], 'にちようびの つぎは なんようびですか。', ['げつようび', 'にちようび', 'かようび', 'すいようび', 'どようび'], 0, '「にちようびの つぎ」= setelah Minggu.'), [175592]),
+  S(L(2206, 'aisatsu', [214182], 'はなして いる ひとが たのんで いる ことは なんですか。', ['もう いちど', 'おかね', 'たべもの', 'みず', 'じかん'], 0, '「もう いちど」= sekali lagi.'), [214182]),
+  S(L(2207, 'keseharian', [219590], 'この ほんは どうですか。', ['あたらしい', 'ふるい', 'おおきい', 'ちいさい', 'たかい'], 0, '「あたらしい」= baru.'), [219590]),
+  S(L(2208, 'jikan', [127344], 'たんじょうびに なにを あげますか。', ['あたらしい じてんしゃ', 'ふるい ほん', 'おかね', 'はな', 'ケーキ'], 0, '「じてんしゃを あげましょう」= ayo berikan sepeda.'), [127344]),
+  S(L(2209, 'gakkou', [165152], 'なんの ために がっこうへ いきますか。', ['べんきょうする ため', 'あそぶ ため', 'ねる ため', 'たべる ため', 'はたらく ため'], 0, '「べんきょうする ために」= untuk belajar.'), [165152]),
+  S(L(2210, 'jikan', [78676], 'らいげつ なにを しますか。', ['きゅうかを とります', 'しけんが あります', 'りょこうに いきます', 'しごとを やめます', 'いえを かいます'], 0, '「きゅうかを とります」= mengambil cuti.'), [78676]),
+  S(L(2211, 'tenki', [80338], 'あしたは どうして いえに いますか。', ['あめだから', 'びょうきだから', 'さむいから', 'いそがしいから', 'つかれたから'], 0, '「あめなら、いえに います」= kalau hujan, di rumah.'), [80338]),
+  S(L(2212, 'shumi', [81615], 'なにが おもしろいですか。', ['ほんを よむ こと', 'テレビを みる こと', 'ねる こと', 'はしる こと', 'およぐ こと'], 0, '「ほんを よむ こと」= membaca buku.'), [81615]),
+  S(L(2213, 'keseharian', [232377], 'いまは なにを する じかんですか。', ['おきる', 'ねる', 'たべる', 'べんきょうする', 'はたらく'], 0, '「おきる じかんです」= waktunya bangun.'), [232377]),
+  S(L(2214, 'keseharian', [152613], 'あした なにを しますか。', ['てがみを かきます', 'ほんを よみます', 'えいがを みます', 'かいものを します', 'ともだちに あいます'], 0, '「てがみを かく つもりです」= berencana menulis surat.'), [152613]),
+  S(L(2215, 'keseharian', [154683], 'にちようびに どこへ いきますか。', ['きょうかい', 'がっこう', 'びょういん', 'デパート', 'としょかん'], 0, '「きょうかいに いきます」= pergi ke gereja.'), [154683]),
+  S(L(2216, 'ryokou', [155480], 'せんしゅうの どようび どこへ いきましたか。', ['こうえん', 'うみ', 'やま', 'デパート', 'としょかん'], 0, '「こうえんへ いきました」= pergi ke taman.'), [155480]),
+  S(L(2217, 'keseharian', [99829], 'かれは まいあさ なにを よみますか。', ['しんぶん', 'ほん', 'てがみ', 'ざっし', 'まんが'], 0, '「しんぶんを よみます」= membaca koran.'), [99829]),
+  S(L(2218, 'keseharian', [232214], 'あなたは いつ いそがしいですか。', ['きょう', 'きのう', 'あした', 'まいにち', 'にちようび'], 0, '「きょう いそがしい」= sibuk hari ini.'), [232214]),
+  S(L(2219, 'keseharian', [233241], 'どちらの じてんしゃが いいですか。', ['あなたの', 'わたしの', 'ちちの', 'ともだちの', 'せんせいの'], 0, '「あなたの じてんしゃは わたしの より いい」= sepedamu lebih bagus.'), [233241]),
+]
+
+const BACAAN_INFER_2 = [
+  S(I(2231, 'keseharian', [84830], 'ちちと ははと いもうとが います。いもうとは まだ ちいさいです。', 'いもうとについて ただしいのは どれですか。', ['ちいさい', 'おおきい', 'がくせいです', 'はたらいて います', 'ひとりで すんで います'], 0, '「まだ ちいさいです」= masih kecil.'), [84830]),
+  S(I(2232, 'keseharian', [78676], 'らいげつ きゅうかを とります。そのとき りょこうに いきます。', 'らいげつ なにを しますか。', ['りょこうに いきます', 'しごとに いきます', 'いえに います', 'べんきょうします', 'びょういんに いきます'], 0, '「きゅうかを とります」+「りょこうに いきます」= cuti lalu jalan-jalan.'), [78676]),
+  S(I(2233, 'uchi', [164011], 'わたしの いえの ちかくに こうえんが あります。だから まいにち こうえんに いきます。', 'この ひとは まいにち どこへ いきますか。', ['こうえん', 'がっこう', 'びょういん', 'デパート', 'としょかん'], 0, '「ちかくに こうえんが あります」+「まいにち こうえんに いきます」.'), [164011]),
+  S(I(2234, 'keseharian', [154683], 'わたしは にちようびに きょうかいに いきます。きょうかいでは うたを うたいます。', 'きょうかいでは なにを しますか。', ['うたを うたいます', 'ほんを よみます', 'ごはんを たべます', 'ねます', 'はしります'], 0, '「きょうかいでは うたを うたいます」= di gereja bernyanyi.'), [154683]),
+  S(I(2235, 'keseharian', [232377], 'あなたは もう おきる じかんです。はやく おきて ください。', 'はなして いる ひとは なにを して ほしいですか。', ['おきて ほしい', 'ねて ほしい', 'はたらいて ほしい', 'べんきょうして ほしい', 'たべて ほしい'], 0, '「おきる じかんです」+「はやく おきて ください」= minta segera bangun.'), [232377]),
+  S(I(2236, 'uchi', [152613], 'わたしは あした てがみを かく つもりです。てがみは ともだちに おくります。', 'てがみは だれに おくりますか。', ['ともだち', 'はは', 'ちち', 'せんせい', 'あに'], 0, '「てがみは ともだちに おくります」= suratnya untuk teman.'), [152613]),
+]
+
+const BACAAN_BS_2 = [
+  S(B(2241, 'kazoku', [164550, 84830], [
+    { text: 'Penulis punya satu adik laki-laki.', benar: true },
+    { text: 'Keluarga penulis terdiri dari ayah, ibu, dan kakak perempuan.', benar: false },
+    { text: 'Keluarga penulis punya adik perempuan.', benar: true },
+  ], '「おとうとが ひとり」+「ちちと ははと いもうと」.'), [164550, 84830]),
+  S(B(2242, 'youbi', [124461, 175592], [
+    { text: 'Setelah Sabtu datang Minggu.', benar: true },
+    { text: 'Setelah Minggu datang Sabtu.', benar: false },
+    { text: 'Setelah Minggu datang Senin.', benar: true },
+  ], '「どようびの つぎは にちようび」+「にちようびの つぎは げつようび」.'), [124461, 175592]),
+  S(B(2243, 'tenki', [171630, 171486], [
+    { text: 'Hari ini sepanas kemarin.', benar: true },
+    { text: 'Hari ini dingin.', benar: false },
+    { text: 'Hari ini sejuk.', benar: true },
+  ], '「きのうと おなじ くらい あつい」+「きょうは すずしいです」.'), [171630, 171486]),
+  S(B(2244, 'keseharian', [152613, 154683], [
+    { text: 'Besok penulis menulis surat.', benar: true },
+    { text: 'Hari Minggu penulis pergi ke pusat perbelanjaan.', benar: false },
+    { text: 'Hari Minggu penulis pergi ke gereja.', benar: true },
+  ], '「あした てがみを かく つもりです」+「にちようびに きょうかいに いきます」.'), [152613, 154683]),
+  S(B(2245, 'jikan', [78676, 80338], [
+    { text: 'Bulan depan penulis mengambil cuti.', benar: true },
+    { text: 'Besok hujan, jadi penulis akan pergi.', benar: false },
+    { text: 'Kalau besok hujan, penulis di rumah.', benar: true },
+  ], '「らいげつ きゅうかを とります」+「あした あめなら、いえに います」.'), [78676, 80338]),
+  S(B(2246, 'uchi', [164011, 163969], [
+    { text: 'Di dekat rumah penulis ada taman.', benar: true },
+    { text: 'Rumah penulis jauh dari stasiun.', benar: false },
+    { text: 'Rumah penulis dekat stasiun.', benar: true },
+  ], '「ちかくに こうえんが あります」+「えきに ちかくて べんりです」.'), [164011, 163969]),
+  S(B(2247, 'keseharian', [155480, 99829], [
+    { text: 'Sabtu lalu penulis pergi ke taman.', benar: true },
+    { text: 'Dia membaca koran setiap malam.', benar: false },
+    { text: 'Dia membaca koran setiap pagi.', benar: true },
+  ], '「こうえんへ いきました」+「まいあさ、しんぶんを よみます」.'), [155480, 99829]),
+]
+
+const BACAAN_MCMA_2 = [
+  S(M(2251, 'kazoku', [164550, 84830], null, ['おとうと', 'いもうと', 'ちち', 'はは', 'あね'], [0, 1, 2, 3], '4 anggota keluarga disebut: adik laki-laki, adik perempuan, ayah, ibu.'), [164550, 84830]),
+  S(M(2252, 'youbi', [124461, 175592], null, ['どようび', 'にちようび', 'げつようび', 'かようび', 'もくようび'], [0, 1, 2], '「どようび」「にちようび」「げつようび」disebut.'), [124461, 175592]),
+  S(M(2253, 'tenki', [171630, 171486, 80338], null, ['あつい', 'すずしい', 'あめ', 'ゆき', 'かぜ'], [0, 1, 2], '「あつい」「すずしい」「あめ」disebut.'), [171630, 171486, 80338]),
+  S(M(2254, 'uchi', [164011, 163969], null, ['こうえん', 'えき', 'いえ', 'がっこう', 'うみ'], [0, 1, 2], '「こうえん」「えき」「いえ」disebut.'), [164011, 163969]),
+  S(M(2255, 'jikan', [78676, 127344], null, ['きゅうか', 'じてんしゃ', 'しけん', 'りょこう', 'しごと'], [0, 1], '「きゅうか」dan「じてんしゃ」disebut.'), [78676, 127344]),
+  S(M(2256, 'keseharian', [152613, 154683, 80338], null, ['てがみ', 'きょうかい', 'いえ', 'がっこう', 'うみ'], [0, 1, 2], '「てがみ」「きょうかい」「いえ」disebut.'), [152613, 154683, 80338]),
+]
+
+export const TATOEBA_BACAAN = [...BACAAN_LITERAL, ...BACAAN_INFER, ...BACAAN_BS, ...BACAAN_MCMA, ...BACAAN_LITERAL_2, ...BACAAN_INFER_2, ...BACAAN_BS_2, ...BACAAN_MCMA_2]
+export const TATOEBA_BACAAN_COUNT = TATOEBA_BACAAN.length
