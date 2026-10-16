@@ -45,7 +45,7 @@ export const MOTION = new Set(['いく', 'くる', 'かえる', 'あるく', '�
 export const PLACE_ACTIVITY = new Set(['たべる', 'のむ', 'よむ', 'かく', 'きく', 'みる', 'かう', 'うる', 'まつ', 'はたらく', 'やすむ', 'ねる', 'すわる', 'そうじする', 'せんたくする', 'りょうりする', 'かいものする', 'うんどうする', 'さんぽする', 'べんきょうする'])
 
 // Kata/frasa yang benar-benar berfungsi sebagai keterangan waktu dan lazim pakai に
-export const TIME_WITH_NI = ['げつようび', 'かようび', 'すいようび', 'もくようび', 'きんようび', 'どようび', 'にちようび', 'おととい', 'あさって', 'しゅうまつ', 'へいじつ', 'ゆうがた']
+export const TIME_WITH_NI = ['げつようび', 'かようび', 'すいようび', 'もくようび', 'きんようび', 'どようび', 'にちようび', 'おととい', 'あさって', 'しゅうまつ', 'へいじつ', 'ゆうがた', 'いちじ', 'にじ', 'さんじ', 'よじ', 'ごじ', 'ろくじ', 'しちじ', 'はちじ', 'くじ', 'じゅうじ', 'じゅういちじ', 'じゅうにじ']
 
 /** Kata bantu penjelas partikel untuk pembahasan. */
 export const PARTICLE_MEANING = {

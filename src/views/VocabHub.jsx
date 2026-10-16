@@ -82,7 +82,7 @@ export default function VocabHub({ progress, onExit }){
           <span className="mt-4 inline-block text-xs font-semibold text-slate-900 dark:text-white">Atur →</span>
         </button>
       </div>
-      <Card className="p-4 text-center text-xs text-slate-500 dark:text-zinc-400">{VOCAB_COUNT} kata N5-N4 • Hari/Angka/Bulan/Tanggal • progreso & XP tetap tercatat</Card>
+      <Card className="p-4 text-center text-xs text-slate-500 dark:text-zinc-400">{VOCAB_COUNT} kata N5-N4 • Hari/Angka/Bulan/Tanggal/Waktu • progreso & XP tetap tercatat</Card>
     </div>
   )
 }
