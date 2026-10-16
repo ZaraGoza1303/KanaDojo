@@ -1,6 +1,6 @@
 // AUTO-GENERATED oleh scripts/exam-gen/build-tatoeba.mjs - jangan diedit manual.
 // Sumber kalimat: Tatoeba, lisensi CC BY 2.0 FR (atribusi per kalimat: src/data/exam/tatoeba/sentences.js).
-// 18 soal cloze bentuk kata kerja.
+// 24 soal cloze bentuk kata kerja.
 
 export const TATOEBA_CLOZE = [
 {"id":2639,"tipe":"cloze","topik":"doushi","teks":"ちちは あたらしい くるまを ___ました。 (かう)","soal":"ただしい かたちを えらんで ください。","pilihan":["かって","かわ","かう","かい","かいます"],"jawaban":3,"pembahasan":"「かう」= membeli. stem ます +「ました」. Sumber: Tatoeba #84431 (small_snow)."},
@@ -21,4 +21,10 @@ export const TATOEBA_CLOZE = [
 {"id":2721,"tipe":"cloze","topik":"doushi","teks":"かれは まいあさ、 しんぶんを ___。 (よむ / bentuk sopan)","soal":"ただしい かたちを えらんで ください。","pilihan":["よみ","よむ","よま","よみます","よんで"],"jawaban":3,"pembahasan":"「よむ」= membaca. bentuk sopan (〜ます). Sumber: Tatoeba #99829 (Yorwba)."},
 {"id":2677,"tipe":"cloze","topik":"doushi","teks":"かれは まいにち こうえんを ___。 (はしる / bentuk sopan)","soal":"ただしい かたちを えらんで ください。","pilihan":["はしります","はしって","はしり","はしら","はしる"],"jawaban":0,"pembahasan":"「はしる」= berlari. bentuk sopan (〜ます). Sumber: Tatoeba #99783 (anonim)."},
 {"id":2649,"tipe":"cloze","topik":"doushi","teks":"わたしは、きょうとに ___。 (いく / bentuk sopan)","soal":"ただしい かたちを えらんで ください。","pilihan":["いき","いく","いか","いって","いきます"],"jawaban":4,"pembahasan":"「いく」= pergi. bentuk sopan (〜ます). Sumber: Tatoeba #162281 (KK_kaku_)."},
+{"id":2619,"tipe":"cloze","topik":"doushi","teks":"わたしは まいあさ ぎんざで ちかてつに ___。 (のる / bentuk sopan)","soal":"ただしい かたちを えらんで ください。","pilihan":["のる","のります","のって","のり","のら"],"jawaban":1,"pembahasan":"「のる」= naik. bentuk sopan (〜ます). Sumber: Tatoeba #152741 (Yorwba)."},
+{"id":2607,"tipe":"cloze","topik":"doushi","teks":"わたしの ちちは いま ほんを ___ いません。 (よむ / bentuk -te)","soal":"ただしい かたちを えらんで ください。","pilihan":["よみ","よんで","よみます","よま","よむ"],"jawaban":1,"pembahasan":"「よむ」= membaca. bentuk -te. Sumber: Tatoeba #162833 (small_snow)."},
+{"id":2741,"tipe":"cloze","topik":"doushi","teks":"わたしたちは まいばん テレビを ___。 (みる / bentuk sopan)","soal":"ただしい かたちを えらんで ください。","pilihan":["みて","み","みません","みます","みる"],"jawaban":3,"pembahasan":"「みる」= melihat. bentuk sopan (〜ます). Sumber: Tatoeba #151272 (anonim)."},
+{"id":2745,"tipe":"cloze","topik":"doushi","teks":"わたしは はつえきで でんしゃに ___。 (のる / bentuk sopan)","soal":"ただしい かたちを えらんで ください。","pilihan":["のら","のって","のります","のる","のり"],"jawaban":2,"pembahasan":"「のる」= naik. bentuk sopan (〜ます). Sumber: Tatoeba #156595 (anonim)."},
+{"id":2675,"tipe":"cloze","topik":"doushi","teks":"きのう あたらしい パソコンを ___ました。 (かう)","soal":"ただしい かたちを えらんで ください。","pilihan":["かって","かう","かいます","かい","かわ"],"jawaban":3,"pembahasan":"「かう」= membeli. stem ます +「ました」. Sumber: Tatoeba #169865 (small_snow)."},
+{"id":2601,"tipe":"cloze","topik":"doushi","teks":"この ほんは ___ たのしいです。 (よむ / bentuk -te)","soal":"ただしい かたちを えらんで ください。","pilihan":["よま","よみ","よむ","よみます","よんで"],"jawaban":4,"pembahasan":"「よむ」= membaca. bentuk -te. Sumber: Tatoeba #219559 (anonim)."},
 ]

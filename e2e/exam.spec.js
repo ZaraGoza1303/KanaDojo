@@ -14,7 +14,7 @@ const KANA = /^[\u3041-\u309F\u30A0-\u30FF\u3005\u3000-\u303F\uFF01-\uFF60ãƒ¼ ã€
 const teksOk = (t) => !hasKanji(t) && KANA.test(String(t).replace(/_{2,}/g, '_'))
 
 test('bank ujian: jumlah minimal dan semua 7 tipe terisi', () => {
-  expect(EXAM_BANK.length).toBeGreaterThanOrEqual(620)
+  expect(EXAM_BANK.length).toBeGreaterThanOrEqual(700)
   const tally = {}
   for (const q of EXAM_BANK) tally[q.tipe] = (tally[q.tipe] || 0) + 1
   for (const t of TIPES) expect(tally[t] || 0, `tipe ${t} kosong`).toBeGreaterThan(0)
@@ -22,7 +22,7 @@ test('bank ujian: jumlah minimal dan semua 7 tipe terisi', () => {
 })
 
 test('bank Tatoeba: atribusi CC BY lengkap dan id sumber valid', () => {
-  expect(EXAM_BANK_TATOEBA.length).toBeGreaterThanOrEqual(80)
+  expect(EXAM_BANK_TATOEBA.length).toBeGreaterThanOrEqual(250)
   expect(TATOEBA_SENTENCES.length).toBeGreaterThanOrEqual(30)
   const known = new Set(TATOEBA_SENTENCES.map((s) => s.id))
   const bad = []
@@ -44,7 +44,21 @@ test('bank Tatoeba: kalimat kurasi lengkap & susun memakai urutan asli', () => {
   expect(bad, `susun tidak cocok kalimat sumber: ${bad.join(', ')}`).toEqual([])
 })
 
-test('bank Tatoeba: kalimat cloze bersumber & kunci = bentuk asli', () => {
+test('bank Tatoeba: blok id per tipe tidak bertabrakan', () => {
+  const cek = (tipe, lo, hi) => {
+    const lain = EXAM_BANK_TATOEBA.filter((q) => q.tipe === tipe && (q.id < lo || q.id > hi)).map((q) => q.id)
+    expect(lain, `${tipe} di luar ${lo}-${hi}: ${lain.join(', ')}`).toEqual([])
+  }
+  cek('susun', 2500, 2599)
+  cek('cloze', 2600, 2799)
+  // bacaan tangan memakai rentang 2101+ dan src selalu cocok pembahasan
+  for (const q of EXAM_BANK_TATOEBA.filter((b) => b.tipe !== 'susun' && b.tipe !== 'cloze')) {
+    expect(q.id, `bacaan id ${q.id}`).toBeGreaterThanOrEqual(2101)
+    expect(q.id, `bacaan id ${q.id}`).toBeLessThan(2600)
+  }
+})
+
+test('bank Tatoeba: src cocok dengan atribusi di pembahasan', () => {
   expect(TATOEBA_CLOZE.length).toBeGreaterThanOrEqual(10)
   const bad = []
   for (const q of TATOEBA_CLOZE) {
