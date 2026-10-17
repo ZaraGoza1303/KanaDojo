@@ -1,5 +1,5 @@
 // AUTO-GENERATED oleh scripts/exam-gen/build-bank.mjs - jangan diedit manual.
-// Sumber: data internal app (src/data/vocab.js, vocab_extra.js, texts.js). Regenerate dengan:
+// Sumber: data internal app (src/data/vocab.js, vocab_extra.js, vocab_phrases.js, texts.js). Regenerate dengan:
 //   node scripts/exam-gen/build-bank.mjs
 // 310 soal.
 
