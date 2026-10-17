@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import { VOCAB_ALL as VOCAB, getVocabByCategories } from '../data/vocabAll.js'
 import { kanaTextToRomaji, extractKana } from '../lib/romaji.js'
+import { pickDistractorArti } from '../lib/distractors.js'
 import { Card, Button, Badge } from '../components/ui.jsx'
 
 function shuffle(a){ const b=[...a]; for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]]} return b }
@@ -48,7 +49,7 @@ export default function VocabChoiceMode({ progress, onExit, onSetup, categories,
     if(!current) return []
     const src = poolRef.current?.length >= 4 ? poolRef.current : VOCAB
     const others = src.filter(v=>v.id!==current.id)
-    const picks = shuffle(others).slice(0,3).map(v=>v.arti)
+    const picks = pickDistractorArti(current, shuffle(others), 3)
     return shuffle([current.arti, ...picks])
   },[current])
 

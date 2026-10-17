@@ -17,6 +17,7 @@ const KANJI = /[\u4E00-\u9FFF\u3400-\u4DBF]/
 const TOPIK_BY_KATEGORI = {
   Nomina: 'meishi', Verba: 'doushi', Adjektiva: 'keiyoushi', Angka: 'suuji', Warna: 'iro',
   Sapaan: 'aisatsu', Hari: 'youbi', Bulan: 'tsuki', Tanggal: 'hizuke', Waktu: 'jikan',
+  Ungkapan: 'hyougen', 'Slang/Anime': 'wakamono',
 }
 
 const shuffled = (arr, key) => shuffleWithSeed(arr, `${SEED}:${key}`)
@@ -348,7 +349,7 @@ const OUT_DIR = new URL('../../src/data/exam/generated/', import.meta.url)
 const TIPES = new Set(['literal', 'cloze', 'susun', 'susunpg', 'infer', 'bs', 'mcma'])
 const HEADER = (count) =>
   `// AUTO-GENERATED oleh scripts/exam-gen/build-bank.mjs - jangan diedit manual.\n` +
-  `// Sumber: data internal app (src/data/vocab.js, vocab_extra.js, texts.js). Regenerate dengan:\n` +
+  `// Sumber: data internal app (src/data/vocab.js, vocab_extra.js, vocab_phrases.js, texts.js). Regenerate dengan:\n` +
   `//   node scripts/exam-gen/build-bank.mjs\n` +
   `// ${count} soal.\n\n`
 

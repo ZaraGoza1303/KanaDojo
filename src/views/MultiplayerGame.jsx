@@ -7,9 +7,10 @@ import {
 } from '../data/kana.js'
 import { EXTENDED_KANA, YOON_KANA } from '../data/extended.js'
 import { TEXTS } from '../data/texts.js'
-import { VOCAB } from '../data/vocab.js'
+import { VOCAB_ALL as VOCAB } from '../data/vocabAll.js'
 import { accuracy as calcAccuracy, kanaTextToRomaji } from '../lib/romaji.js'
 import { comboMultiplier } from '../lib/progress.js'
+import { pickDistractorArti } from '../lib/distractors.js'
 import { fireConfetti } from '../lib/confetti.js'
 import { playCorrect, playWrong, playCombo, playFinish, playClick } from '../lib/sound.js'
 import { sendViaRelay, pollRelay } from '../lib/relay.js'
@@ -98,7 +99,7 @@ export default function MultiplayerGame({ config, progress, onExit, multiplayer 
     if (!entry || mode!=='vocab') return []
     const others = VOCAB.filter(v=> v.id!==entry.id)
     const shuffledOthers = shuffleWithSeed(others, seed+':vocab-opt:'+idx)
-    const picks = shuffledOthers.slice(0,3).map(v=> v.arti)
+    const picks = pickDistractorArti(entry, shuffledOthers, 3)
     const all = [entry.arti, ...picks]
     return shuffleWithSeed(all, seed+':vocab-shuffle:'+idx)
   }, [mode, seed])

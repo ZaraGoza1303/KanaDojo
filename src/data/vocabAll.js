@@ -1,6 +1,7 @@
 import { VOCAB } from './vocab.js'
 import { VOCAB_EXTRA } from './vocab_extra.js'
-export const VOCAB_ALL = [...VOCAB, ...VOCAB_EXTRA]
+import { VOCAB_PHRASES } from './vocab_phrases.js'
+export const VOCAB_ALL = [...VOCAB, ...VOCAB_EXTRA, ...VOCAB_PHRASES]
 export const VOCAB_COUNT = VOCAB_ALL.length
 
 // Kategori + jumlah kata (dihitung sekali agar Setup & mode konsisten)
